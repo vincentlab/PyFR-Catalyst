@@ -1,0 +1,298 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="PyFRContourFilter"
+		 class="vtkPyFRContourFilter" label="Contour PyFR Data">
+      <Documentation long_help="Generate isosurface from PyFR data."
+                     short_help="Generate isosurface.">
+	The ContourPyFRData filter computes isosurfaces using PyFR data. The
+        filter uses vtk-m to generate the isosurface entirely on the GPU,
+        eliminating the need for PyFR's field data to be transferred to the host.
+      </Documentation>
+      <InputProperty
+          name="Input"
+          command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="PyFRData"/>
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty
+          name="ContourField"
+          command="SetContourField"
+          number_of_elements="1"
+          default_values="1">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="Density"/>
+          <Entry value="1" text="Pressure"/>
+          <Entry value="2" text="Velocity_u"/>
+          <Entry value="3" text="Velocity_v"/>
+          <Entry value="4" text="Velocity_w"/>
+        </EnumerationDomain>
+        <Documentation>
+          This property indicates which field will be used to generate
+	  the isosurface.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty animateable="1"
+	  command="SetContourValue"
+	  label = "Isosurfaces"
+	  name = "ContourValues"
+	  number_of_elements="0"
+          number_of_elements_per_command="1"
+          repeat_command="1"
+          set_number_command="SetNumberOfContours"
+          use_index="1">
+        <ArrayRangeDomain name="scalar_range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+        <Documentation>
+	  This property specifies the values at which to compute an isosurface.
+	</Documentation>
+      </DoubleVectorProperty>
+      <IntVectorProperty
+          name="ColorField"
+          command="SetMappedField"
+          number_of_elements="1"
+          default_values="1">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="Density"/>
+          <Entry value="1" text="Pressure"/>
+          <Entry value="2" text="Velocity_u"/>
+          <Entry value="3" text="Velocity_v"/>
+          <Entry value="4" text="Velocity_w"/>
+        </EnumerationDomain>
+        <Documentation>
+          This property indicates which field will be used to color
+	  the isosurface.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+          name="ColorPalette"
+          command="SetColorPalette"
+          number_of_elements="1"
+          default_values="1">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="Cool to Warm"/>
+          <Entry value="1" text="Black-Body Radiation"/>
+          <Entry value="2" text="Blue to Red Rainbow"/>
+          <Entry value="3" text="Grayscale"/>
+          <Entry value="4" text="Green-White Linear"/>
+        </EnumerationDomain>
+        <Documentation>
+          This property indicates which color palette to use for isosurfaces
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetColorRange"
+                            default_values="0.0 1.0"
+                            name="ColorRange"
+                            number_of_elements="2">
+        <BoundsDomain default_mode="mid"
+                      mode="normal"
+                      name="range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy name="PyFRCrinkleClipFilter"
+		 class="vtkPyFRCrinkleClipFilter" label="Clip PyFR Data">
+      <Documentation long_help="Clip with an implicit plane or
+				sphere. Clipping does not reduce the
+				dimensionality of the data set. The
+				output data type of this filter is
+				always an unstructured grid."
+				short_help="Clip PyFR data.">
+				The Clip filter cuts away a portion of the input data set using an
+				implicit plane or sphere.
+      </Documentation>
+      <InputProperty
+          name="Input"
+          command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="PyFRData"/>
+        </DataTypeDomain>
+      </InputProperty>
+      <DoubleVectorProperty command="SetOrigin"
+                            default_values="0.0 0.0 0.0"
+                            name="Origin"
+                            number_of_elements="3">
+        <BoundsDomain default_mode="mid"
+                      mode="normal"
+                      name="range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetNormal"
+                            default_values="0.0 1.0 0.0"
+                            name="Normal"
+                            number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+      </DoubleVectorProperty>
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy name="PyFRParallelSliceFilter"
+		 class="vtkPyFRParallelSliceFilter" label="Slice PyFR Data">
+      <Documentation long_help="Slice PyFR data with parallel planes."
+                     short_help="Slice PyFR data.">
+	The ParallelSlicePyFRData filter slices PyFR data with
+	parallel planes. The filter uses vtk-m to generate the
+	isosurface entirely on the GPU, eliminating the need for
+	PyFR's field data to be transferred to the host.
+      </Documentation>
+      <InputProperty
+          name="Input"
+          command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="PyFRData"/>
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty
+          name="NumberOfPlanes"
+          command="SetNumberOfPlanes"
+          number_of_elements="1"
+          default_values="5">
+        <IntRangeDomain name="range" />
+        <Documentation>
+          This property indicates how many parallel planes will be
+	  used to slice the dataset.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty
+          name="Spacing"
+          command="SetSpacing"
+          number_of_elements="1"
+          default_values="3">
+        <DoubleRangeDomain name="range" />
+        <Documentation>
+          This property determines the spacing between parallel slice planes.
+        </Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetOrigin"
+                            default_values="3.0 0.0 0.0"
+                            name="Origin"
+                            number_of_elements="3">
+        <BoundsDomain default_mode="mid"
+                      mode="normal"
+                      name="range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetNormal"
+                            default_values="1.0 0.0 0.0"
+                            name="Normal"
+                            number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+      </DoubleVectorProperty>
+      <IntVectorProperty
+          name="ColorField"
+          command="SetMappedField"
+          number_of_elements="1"
+          default_values="1">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="Density"/>
+          <Entry value="1" text="Pressure"/>
+          <Entry value="2" text="Velocity_u"/>
+          <Entry value="3" text="Velocity_v"/>
+          <Entry value="4" text="Velocity_w"/>
+        </EnumerationDomain>
+        <Documentation>
+          This property indicates which field will be used to color
+	  the isosurface.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+          name="ColorPalette"
+          command="SetColorPalette"
+          number_of_elements="1"
+          default_values="0">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="Cool to Warm"/>
+          <Entry value="1" text="Black-Body Radiation"/>
+          <Entry value="2" text="Blue to Red Rainbow"/>
+          <Entry value="3" text="Grayscale"/>
+          <Entry value="4" text="Green-White Linear"/>
+        </EnumerationDomain>
+        <Documentation>
+          This property indicates which color palette to use for isosurfaces
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetColorRange"
+                            default_values="0.0 1.0"
+                            name="ColorRange"
+                            number_of_elements="2">
+        <BoundsDomain default_mode="mid"
+                      mode="normal"
+                      name="range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy name="PyFRDataConverter"
+		 class="vtkPyFRDataConverter" label="Convert PyFR Data">
+      <Documentation long_help="Convert PyFR data to vtkUnstructuredGrid."
+                     short_help="Convert PyFR data.">
+	The ConvertPyFRData filter converts PyFR data into an
+	unstructured grid.
+      </Documentation>
+      <InputProperty
+          name="Input"
+          command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="PyFRData"/>
+        </DataTypeDomain>
+      </InputProperty>
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy name="PyFRContourDataConverter"
+		 class="vtkPyFRContourDataConverter"
+		 label="Convert PyFR Contour Data">
+      <Documentation long_help="Convert PyFR data to vtkPolyData."
+                     short_help="Convert PyFR data.">
+	The ConvertPyFRContourData filter converts PyFR contour data
+	into polydata.
+      </Documentation>
+      <InputProperty
+          name="Input"
+          command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="PyFRContourData"/>
+        </DataTypeDomain>
+      </InputProperty>
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>

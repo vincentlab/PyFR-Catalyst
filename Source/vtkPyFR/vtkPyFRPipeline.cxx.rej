@@ -1,0 +1,24 @@
+***************
+*** 39,47 ****
+  #include "vtkPyFRParallelSliceFilter.h"
+  #include "vtkXMLPyFRDataWriter.h"
+  #include "vtkXMLPyFRContourDataWriter.h"
+  
+  #include "PyFRData.h"
+  
+  #define STRINGIFY(x) #x
+  #define TOSTRING(x) STRINGIFY(x)
+  
+--- 39,50 ----
+  #include "vtkPyFRParallelSliceFilter.h"
+  #include "vtkXMLPyFRDataWriter.h"
+  #include "vtkXMLPyFRContourDataWriter.h"
++ #include "vtkPVPlugin.h"
+  
+  #include "PyFRData.h"
+  
++ PV_PLUGIN_IMPORT_INIT(pyfr_plugin_fp64)
++ 
+  #define STRINGIFY(x) #x
+  #define TOSTRING(x) STRINGIFY(x)
+  
