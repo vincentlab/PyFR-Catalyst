@@ -10,11 +10,13 @@ set(PyFR_SRCS
 
 set( PyFRLibs )
 foreach (fpType IN LISTS fpList)
+  message(STATUS "setting up fpoint type '${fpType}'")
   set (pyfrLib "pyfr_${libSuffix_${fpType}}")
   set( fp_cxx_flags "-DFPType=${fpType}" )
   cuda_add_library(${pyfrLib} SHARED ${PyFR_SRCS} OPTIONS ${fp_cxx_flags})
   set_target_properties(${pyfrLib} PROPERTIES COMPILE_FLAGS ${fp_cxx_flags})
-target_link_libraries(${pyfrLib} ${MPI_LIBRARIES})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${fp_cxx_flags}")
+  target_link_libraries(${pyfrLib} ${MPI_LIBRARIES})
   if(MPI_COMPILE_FLAGS)
     set_target_properties(${pyfrLib} PROPERTIES
       COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")

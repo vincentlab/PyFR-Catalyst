@@ -34,6 +34,7 @@ if (BuildServerLibs)
 
     add_paraview_plugin(${pluginLib} "1.0" SERVER_MANAGER_XML PyFR.xml SERVER_MANAGER_SOURCES ${vtkPyFR_SRCS})
     set_target_properties(${pluginLib} PROPERTIES COMPILE_FLAGS ${fp_cxx_flags})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${fp_cxx_flags}")
     target_include_directories(${pluginLib} PUBLIC ${PROJECT_SOURCE_DIR}/Source/PyFR)
     target_link_libraries(${pluginLib} PRIVATE vtkPVCatalyst vtkPVVTKExtensionsDefault vtkPVClientServerCoreCore ${pyfrLib} ${CUDA_LIBRARIES} ${MPI_LIBRARIES})
     if(MPI_COMPILE_FLAGS)
