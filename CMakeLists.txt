@@ -38,10 +38,11 @@ if (BuildServerLibs)
   find_package(MPI REQUIRED)
   include_directories(${MPI_INCLUDE_PATH})
 
+  find_package(CUDA REQUIRED)
   find_package(VTKm REQUIRED)
   include(VTKmMacros)
   vtkm_configure_device(Serial REQUIRED)
-  vtkm_configure_device(CUDA REQUIRED)
+  vtkm_configure_device(Cuda REQUIRED)
 
   find_package(BoostHeaders ${VTKm_REQUIRED_BOOST_VERSION} REQUIRED)
   include_directories(${Boost_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS})
