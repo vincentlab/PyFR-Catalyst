@@ -12,7 +12,6 @@
 #include <vtkObjectFactory.h>
 #include <vtkPlane.h>
 #include <vtkPolyDataMapper.h>
-#include <vtkPVArrayInformation.h>
 #include <vtkPVLiveRenderView.h>
 #include <vtkPVTrivialProducer.h>
 #include <vtkRenderer.h>
@@ -142,7 +141,8 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   bool postFilterWrite = false;
 
   // Construct a pipeline controller to register my elements
-  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+  typedef vtkSMParaViewPipelineControllerWithRendering ctlr_;
+  this->controller = vtkSmartPointer<ctlr_>::New();
 
   // Create a vtkPVTrivialProducer and set its output
   // to be the input data.
@@ -155,8 +155,8 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   vtkPVTrivialProducer* realProducer =
     vtkPVTrivialProducer::SafeDownCast(clientSideObject);
   realProducer->SetOutput(pyfrData);
-  controller->InitializeProxy(producer);
-  controller->RegisterPipelineProxy(producer,"Source");
+  this->controller->InitializeProxy(producer);
+  this->controller->RegisterPipelineProxy(producer,"Source");
 
   if (preFilterWrite)
     {
@@ -172,8 +172,9 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     pyfrDataConverterInputConnection->SetInputConnection(0, producer, 0);
     pyfrDataConverter->UpdatePropertyInformation();
     pyfrDataConverter->UpdateVTKObjects();
-    controller->InitializeProxy(pyfrDataConverter);
-    controller->RegisterPipelineProxy(pyfrDataConverter,"convertPyFRData");
+    this->controller->InitializeProxy(pyfrDataConverter);
+    this->controller->RegisterPipelineProxy(pyfrDataConverter,
+                                            "convertPyFRData");
 
     // Create an unstructured grid writer, set the filename and then update the
     // pipeline.
@@ -203,8 +204,8 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
       unstructuredGridWriter->UpdatePropertyInformation();
       unstructuredGridWriter->UpdateVTKObjects();
       unstructuredGridWriter->UpdatePipeline();
-      controller->InitializeProxy(unstructuredGridWriter);
-      controller->RegisterPipelineProxy(unstructuredGridWriter,
+      this->controller->InitializeProxy(unstructuredGridWriter);
+      this->controller->RegisterPipelineProxy(unstructuredGridWriter,
                                         "UnstructuredGridWriter");
     }
 
@@ -213,25 +214,25 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
                                    NewProxy("filters",
                                             "PyFRCrinkleClipFilter")));
-  controller->PreInitializeProxy(this->Clip);
+  this->controller->PreInitializeProxy(this->Clip);
   vtkSMPropertyHelper(this->Clip, "Input").Set(producer, 0);
   this->Clip->UpdateVTKObjects();
-  controller->PostInitializeProxy(this->Clip);
-  controller->RegisterPipelineProxy(this->Clip,"Clip");
+  this->controller->PostInitializeProxy(this->Clip);
+  this->controller->RegisterPipelineProxy(this->Clip,"Clip");
 
   // Add the slice filter
   this->Slice.TakeReference(
     vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
                                    NewProxy("filters",
                                             "PyFRParallelSliceFilter")));
-  controller->PreInitializeProxy(this->Slice);
+  this->controller->PreInitializeProxy(this->Slice);
   vtkSMPropertyHelper(this->Slice, "Input").Set(producer, 0);
   vtkSMPropertyHelper(this->Slice,"ColorField").Set(0);
   double sliceColorRange[2] = {0.695,0.7385};
   vtkSMPropertyHelper(this->Slice,"ColorRange").Set(sliceColorRange,2);
   this->Slice->UpdateVTKObjects();
-  controller->PostInitializeProxy(this->Slice);
-  controller->RegisterPipelineProxy(this->Slice,"Slice");
+  this->controller->PostInitializeProxy(this->Slice);
+  this->controller->RegisterPipelineProxy(this->Slice,"Slice");
 
   // Add the contour filter
   this->Contour.TakeReference(
@@ -241,7 +242,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   vtkSMInputProperty* contourInputConnection =
     vtkSMInputProperty::SafeDownCast(this->Contour->GetProperty("Input"));
 
-  controller->PreInitializeProxy(this->Contour);
+  this->controller->PreInitializeProxy(this->Contour);
   vtkSMPropertyHelper(this->Contour, "Input").Set(this->Clip, 0);
   vtkSMPropertyHelper(this->Contour,"ContourField").Set(0);
   vtkSMPropertyHelper(this->Contour,"ColorField").Set(0);
@@ -256,16 +257,16 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   vtkSMPropertyHelper(this->Contour,"ColorRange").Set(contourColorRange,2);
 
   this->Contour->UpdateVTKObjects();
-  controller->PostInitializeProxy(this->Contour);
-  controller->RegisterPipelineProxy(this->Contour,"Contour");
+  this->controller->PostInitializeProxy(this->Contour);
+  this->controller->RegisterPipelineProxy(this->Contour,"Contour");
 
   // Create a view
   vtkSmartPointer<vtkSMViewProxy> polydataViewer;
   polydataViewer.TakeReference(
     vtkSMViewProxy::SafeDownCast(sessionProxyManager->
                                  NewProxy("views","RenderView")));
-  controller->InitializeProxy(polydataViewer);
-  controller->RegisterViewProxy(polydataViewer);
+  this->controller->InitializeProxy(polydataViewer);
+  this->controller->RegisterViewProxy(polydataViewer);
 
   // Show the results.
   this->ContourMapper = vtkSmartPointer<vtkPyFRMapper>::New();
@@ -288,9 +289,9 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     pyfrContourDataConverterInputConnection->SetInputConnection(0, this->Contour, 0);
     pyfrContourDataConverter->UpdatePropertyInformation();
     pyfrContourDataConverter->UpdateVTKObjects();
-    controller->InitializeProxy(pyfrContourDataConverter);
-    controller->RegisterPipelineProxy(pyfrContourDataConverter,
-                                      "ConvertContoursToPolyData");
+    this->controller->InitializeProxy(pyfrContourDataConverter);
+    this->controller->RegisterPipelineProxy(pyfrContourDataConverter,
+                                            "ConvertContoursToPolyData");
 
     // Create the polydata writer, set the filename and then update the pipeline
     vtkSmartPointer<vtkSMWriterProxy> polydataWriter;
@@ -317,29 +318,33 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
       polydataWriter->UpdatePropertyInformation();
       polydataWriter->UpdateVTKObjects();
       polydataWriter->UpdatePipeline();
-      controller->InitializeProxy(polydataWriter);
-      controller->RegisterPipelineProxy(polydataWriter,"polydataWriter");
+      this->controller->InitializeProxy(polydataWriter);
+      this->controller->RegisterPipelineProxy(polydataWriter,"polydataWriter");
     }
 
-  vtkSmartPointer<vtkSMSourceProxy> airplane;
-  airplane.TakeReference(
-    vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
-                                   NewProxy("internal_sources",
-                                            "XMLUnstructuredGridReaderCore")));
-  controller->PreInitializeProxy(airplane);
+  const bool plane = true;
+  if(plane)
     {
-    std::ostringstream o;
-    o << STRINGIFY(DATA_DIR) << "/airplane.vtu";
-    vtkSMPropertyHelper(airplane, "FileName").Set(o.str().c_str());
-    }
-  airplane->UpdateVTKObjects();
-  controller->PostInitializeProxy(airplane);
-  controller->RegisterPipelineProxy(airplane,"Airplane");
+    vtkSmartPointer<vtkSMSourceProxy> airplane;
+    airplane.TakeReference(
+      vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
+                                     NewProxy("internal_sources",
+                                              "XMLUnstructuredGridReaderCore")));
+    this->controller->PreInitializeProxy(airplane);
+      {
+      std::ostringstream o;
+      o << STRINGIFY(DATA_DIR) << "/airplane.vtu";
+      vtkSMPropertyHelper(airplane, "FileName").Set(o.str().c_str());
+      }
+    airplane->UpdateVTKObjects();
+    this->controller->PostInitializeProxy(airplane);
+    this->controller->RegisterPipelineProxy(airplane,"Airplane");
 
-  // Create a view
-  vtkSmartPointer<vtkDataSetMapper> airplaneMapper =
-    vtkSmartPointer<vtkDataSetMapper>::New();
-  vtkAddActor(airplaneMapper, airplane, polydataViewer);
+    // Create a view
+    vtkSmartPointer<vtkDataSetMapper> airplaneMapper =
+      vtkSmartPointer<vtkDataSetMapper>::New();
+    vtkAddActor(airplaneMapper, airplane, polydataViewer);
+    }
 
   // Create a timestamp
   this->Timestamp = vtkSmartPointer<vtkTextActor>::New();
@@ -415,13 +420,12 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
 
   vtkSMSourceProxy* unstructuredGridWriter =
     vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
-				   GetProxy("UnstructuredGridWriter"));
+                                   GetProxy("UnstructuredGridWriter"));
   if (unstructuredGridWriter)
     {
     vtkSMStringVectorProperty* unstructuredGridFileName =
       vtkSMStringVectorProperty::SafeDownCast(unstructuredGridWriter->
                                               GetProperty("FileName"));
-
       {
       std::ostringstream o;
       o << this->FileName.substr(0,this->FileName.find_last_of("."));
@@ -435,7 +439,7 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     }
   vtkSMSourceProxy* polydataWriter =
     vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
-				   GetProxy("polydataWriter"));
+                                   GetProxy("polydataWriter"));
   if (polydataWriter)
     {
     vtkSMStringVectorProperty* polydataFileName =

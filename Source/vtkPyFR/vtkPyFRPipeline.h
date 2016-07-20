@@ -12,6 +12,7 @@ class vtkPyFRMapper;
 class vtkSMSourceProxy;
 class vtkSMPVRepresentationProxy;
 class vtkTextActor;
+class vtkSMParaViewPipelineControllerWithRendering;
 
 class vtkPyFRPipeline : public vtkCPPipeline
 {
@@ -50,5 +51,7 @@ private:
   vtkSmartPointer<vtkPyFRMapper> SliceMapper;
 
   vtkSmartPointer<vtkTextActor> Timestamp;
+
+  vtkSmartPointer<vtkSMParaViewPipelineControllerWithRendering> controller;
 };
 #endif
