@@ -1,6 +1,6 @@
-#include "vtkPyFRPipeline.h"
-
 #include <sstream>
+
+#include "vtkPyFRPipeline.h"
 
 #include <vtkActor.h>
 #include <vtkCollection.h>
@@ -469,13 +469,27 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
 
     vtkNew<vtkCollection> views;
     sessionProxyManager->GetProxies("views",views.GetPointer());
-    for (int i=0;i<views->GetNumberOfItems();i++)
+    const size_t nviews = views->GetNumberOfItems();
+    for (int i=0; i < nviews; i++)
       {
       vtkSMViewProxy* viewProxy =
         vtkSMViewProxy::SafeDownCast(views->GetItemAsObject(i));
       vtkSMPropertyHelper(viewProxy,"ViewTime").Set(dataDescription->GetTime());
       viewProxy->UpdateVTKObjects();
       viewProxy->Update();
+
+      const int magnification = 1;
+      const int quality = 100;
+      char fname[32] = {0};
+      if(nviews > 1)
+        {
+        snprintf(fname, 32, "ts%04ld-v%d.png",
+                 (long)dataDescription->GetTimeStep(), i);
+        } else {
+        snprintf(fname, 32, "ts%04ld.png",
+                 (long)dataDescription->GetTimeStep());
+        }
+      this->controller->WriteImage(viewProxy, fname, magnification, quality);
       }
 
     this->InsituLink->InsituPostProcess(dataDescription->GetTime(),
