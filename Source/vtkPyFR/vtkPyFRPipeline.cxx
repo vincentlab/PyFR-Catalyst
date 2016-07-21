@@ -3,6 +3,7 @@
 #include "vtkPyFRPipeline.h"
 
 #include <vtkActor.h>
+#include <vtkCamera.h>
 #include <vtkCollection.h>
 #include <vtkCPDataDescription.h>
 #include <vtkCPInputDataDescription.h>
@@ -15,6 +16,8 @@
 #include <vtkPVLiveRenderView.h>
 #include <vtkPVTrivialProducer.h>
 #include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
+#include <vtkRenderWindow.h>
 #include <vtkSmartPointer.h>
 #include <vtkSMDoubleVectorProperty.h>
 #include <vtkSMInputProperty.h>
@@ -478,6 +481,29 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
       viewProxy->UpdateVTKObjects();
       viewProxy->Update();
 
+      vtkWeakPointer<vtkRenderWindow> rw = viewProxy->GetRenderWindow();
+      vtkWeakPointer<vtkRendererCollection> rens = rw->GetRenderers();
+      assert(rens);
+      vtkWeakPointer<vtkRenderer> ren = rens->GetFirstRenderer();
+      ren->ResetCamera();
+      ren->ResetCameraClippingRange();
+      vtkWeakPointer<vtkCamera> cam = ren->GetActiveCamera();
+      double eye[3] = {0.0};
+      double ref[3] = {0.0};
+      double vup[3] = {0.0};
+      cam->GetPosition(eye);
+      cam->GetFocalPoint(ref);
+      cam->GetViewUp(vup);
+      printf("eye={%lg %lg %lg} ref={%lf %lf %lf} vup={%lf %lf %lf}\n",
+             eye[0],eye[1],eye[2], ref[0],ref[1],ref[2], vup[0],vup[1],vup[2]);
+#if 0
+      // tjf -- these are okay for the taylor green case.
+      eye[2] = 30.0;
+      ref[0] = 0.0;
+      eye[0] = 5.0;
+      cam->SetPosition(eye);
+      cam->SetFocalPoint(ref);
+#endif
       const int magnification = 1;
       const int quality = 100;
       char fname[32] = {0};
