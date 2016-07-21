@@ -325,7 +325,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
       this->controller->RegisterPipelineProxy(polydataWriter,"polydataWriter");
     }
 
-  const bool plane = true;
+  const bool plane = false;
   if(plane)
     {
     vtkSmartPointer<vtkSMSourceProxy> airplane;
