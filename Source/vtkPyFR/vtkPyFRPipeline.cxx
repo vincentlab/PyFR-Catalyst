@@ -272,7 +272,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   this->ContourMapper = vtkSmartPointer<vtkPyFRMapper>::New();
   this->SliceMapper = vtkSmartPointer<vtkPyFRMapper>::New();
   vtkAddActor(this->ContourMapper, this->Contour, polydataViewer);
-  vtkAddActor(this->SliceMapper, this->Slice, polydataViewer);
+  //vtkAddActor(this->SliceMapper, this->Slice, polydataViewer);
 
   if (postFilterWrite)
     {
