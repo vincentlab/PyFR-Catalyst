@@ -251,6 +251,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   vtkSMPropertyHelper(this->Contour,"ColorField").Set(0);
 
   // Values for the PyFR demo
+#if 0
   vtkSMPropertyHelper(this->Contour,"ContourValues").Set(0,.738);
   vtkSMPropertyHelper(this->Contour,"ContourValues").Set(1,.7392);
   vtkSMPropertyHelper(this->Contour,"ContourValues").Set(2,.7404);
@@ -258,6 +259,11 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   vtkSMPropertyHelper(this->Contour,"ContourValues").Set(4,.7428);
   double contourColorRange[2] = {.7377,.7428};
   vtkSMPropertyHelper(this->Contour,"ColorRange").Set(contourColorRange,2);
+#else
+  vtkSMPropertyHelper(this->Contour,"ContourValues").Set(0,.9985);
+  double contourColorRange[2] = {.995,1.0055};
+  vtkSMPropertyHelper(this->Contour,"ColorRange").Set(contourColorRange,2);
+#endif
 
   this->Contour->UpdateVTKObjects();
   this->controller->PostInitializeProxy(this->Contour);
