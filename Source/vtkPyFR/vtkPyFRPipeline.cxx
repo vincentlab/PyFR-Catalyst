@@ -280,6 +280,10 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   this->SliceMapper = vtkSmartPointer<vtkPyFRMapper>::New();
   vtkAddActor(this->ContourMapper, this->Contour, polydataViewer);
   //vtkAddActor(this->SliceMapper, this->Slice, polydataViewer);
+  const double* bds = this->ContourMapper->GetBounds();
+  std::cout << "[tjfCatalyst] bounds: [ ";
+  std::copy(bds, bds+6, std::ostream_iterator<double>(std::cout, ", "));
+  std::cout << "]\n";
 
   if (postFilterWrite)
     {
