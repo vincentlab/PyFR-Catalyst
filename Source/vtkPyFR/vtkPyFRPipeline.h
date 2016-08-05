@@ -21,7 +21,7 @@ public:
   vtkTypeMacro(vtkPyFRPipeline,vtkCPPipeline)
   virtual void PrintSelf(ostream& os, vtkIndent indent);
 
-  virtual void Initialize(char* hostName, int port, char* fileName,
+  virtual void Initialize(const char* hostName, int port, char* fileName,
                           vtkCPDataDescription* dataDescription);
 
 virtual int RequestDataDescription(vtkCPDataDescription* dataDescription);

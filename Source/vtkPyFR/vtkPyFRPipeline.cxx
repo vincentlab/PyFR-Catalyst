@@ -106,7 +106,7 @@ vtkPyFRPipeline::~vtkPyFRPipeline()
 }
 
 //----------------------------------------------------------------------------
-void vtkPyFRPipeline::Initialize(char* hostName, int port, char* fileName,
+void vtkPyFRPipeline::Initialize(const char* hostName, int port, char* fileName,
                                  vtkCPDataDescription* dataDescription)
 {
   this->FileName = std::string(fileName);
