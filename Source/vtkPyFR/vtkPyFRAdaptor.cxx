@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -25,23 +26,24 @@ namespace
 }
 
 //----------------------------------------------------------------------------
-void* CatalystInitialize(char* hostName, int port, char* outputfile, void* p)
+void* CatalystInitialize(char* hostName, int pyport, char* outputfile, void* p)
 {
   vtkPyFRData* data = vtkPyFRData::New();
   data->GetData()->Init(p);
-  char* envHost = getenv("PV_HOSTNAME");
-  if(NULL == envHost) {
-    std::cerr << "PV_HOSTNAME environment variable is not set.  Bailing.\n";
-    exit(EXIT_FAILURE);
-  }
+  const char* envHost = getenv("PV_HOSTNAME");
   const char* envPortS = getenv("PV_PORT");
-  if(NULL == envPortS) {
-    std::cerr << "PV_PORT not set.  Bailing.\n";
-    exit(EXIT_FAILURE);
+  const char* host = hostName;
+  int port = pyport;
+  if(NULL != envHost) {
+    std::cout << "Overriding config file host with env var.\n";
+    host = envHost;
   }
-  int envPort = atoi(envPortS ? envPortS : 0);
-  std::cout << "[tjfCatalyst] ignoring '" << hostName << ":" << port << "'"
-            << " and using '" << envHost << ":" << envPort << "' instead.\n";
+  if(NULL != envPortS) {
+    std::cout << "Overriding config file port with env var.\n";
+    port = atoi(envPortS);
+  }
+  std::cout << "[tjfCatalyst] host=" << host << ":" << port << "\n";
+  assert(0 < port && port < 65536);
 
   if(Processor == NULL)
     {
@@ -54,7 +56,7 @@ void* CatalystInitialize(char* hostName, int port, char* outputfile, void* p)
   dataDescription->GetInputDescriptionByName("input")->SetGrid(data);
 
   vtkNew<vtkPyFRPipeline> pipeline;
-  pipeline->Initialize(envHost,envPort,outputfile,dataDescription.GetPointer());
+  pipeline->Initialize(host, port, outputfile, dataDescription.GetPointer());
   Processor->AddPipeline(pipeline.GetPointer());
 
   return data;
