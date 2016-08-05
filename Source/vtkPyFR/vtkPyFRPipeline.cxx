@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <sstream>
 
 #include "vtkPyFRPipeline.h"
@@ -250,20 +251,17 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   vtkSMPropertyHelper(this->Contour,"ContourField").Set(0);
   vtkSMPropertyHelper(this->Contour,"ColorField").Set(0);
 
-  // Values for the PyFR demo
-#if 0
-  vtkSMPropertyHelper(this->Contour,"ContourValues").Set(0,.738);
-  vtkSMPropertyHelper(this->Contour,"ContourValues").Set(1,.7392);
-  vtkSMPropertyHelper(this->Contour,"ContourValues").Set(2,.7404);
-  vtkSMPropertyHelper(this->Contour,"ContourValues").Set(3,.7416);
-  vtkSMPropertyHelper(this->Contour,"ContourValues").Set(4,.7428);
-  double contourColorRange[2] = {.7377,.7428};
-  vtkSMPropertyHelper(this->Contour,"ColorRange").Set(contourColorRange,2);
-#else
-  vtkSMPropertyHelper(this->Contour,"ContourValues").Set(0,.9985);
-  double contourColorRange[2] = {.995,1.0055};
-  vtkSMPropertyHelper(this->Contour,"ColorRange").Set(contourColorRange,2);
-#endif
+  // Set up the isovalues to use.
+  const PyFRData* dta = pyfrData->GetData();
+  const std::vector<float> isovalues = dta->isovalues();
+  for(size_t i=0; i < isovalues.size(); ++i) {
+    printf("setting isovalue %zu: %g\n", i, isovalues[i]);
+    vtkSMPropertyHelper(this->Contour, "ContourValues").Set(i, isovalues[i]);
+  }
+  auto mm = std::minmax_element(isovalues.begin(), isovalues.end());
+  const double mm_isocol[2] = {*mm.first-1.0, *mm.second+1.0};
+  printf("Setting color range: %g--%g.\n", mm_isocol[0], mm_isocol[1]);
+  vtkSMPropertyHelper(this->Contour, "ColorRange").Set(mm_isocol, 2);
 
   this->Contour->UpdateVTKObjects();
   this->controller->PostInitializeProxy(this->Contour);
