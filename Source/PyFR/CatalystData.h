@@ -46,5 +46,7 @@ struct CatalystData
   int nCellTypes;
   MeshDataForCellType* meshData;
   SolutionDataForCellType* solutionData;
+  float* isovalues;
+  unsigned niso;
 };
 #endif

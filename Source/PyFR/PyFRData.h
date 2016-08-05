@@ -1,6 +1,7 @@
 #ifndef PYFRDATA_H
 #define PYFRDATA_H
 
+#include <vector>
 //State that the default backend for this code is CUDA
 //not serial
 // #define VTKM_DEVICE_ADAPTER VTKM_DEVICE_ADAPTER_CUDA
@@ -70,6 +71,8 @@ public:
   static int FieldIndex(std::string name) { return PyFRData::fieldIndex[name]; }
   static std::string FieldName(int i) { return PyFRData::fieldName[i]; }
 
+  std::vector<float> isovalues() const { return this->isovals; }
+
 private:
   static std::map<int,std::string> fieldName;
   static std::map<std::string,int> fieldIndex;
@@ -78,6 +81,7 @@ private:
 
   struct CatalystData* catalystData;
   vtkm::cont::DataSet dataSet;
+  std::vector<float> isovals;
 };
 
 #endif

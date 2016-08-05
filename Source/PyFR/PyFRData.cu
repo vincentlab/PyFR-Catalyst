@@ -60,6 +60,10 @@ void PyFRData::Init(void* data)
   MeshDataForCellType* meshData = &(this->catalystData->meshData[0]);
   SolutionDataForCellType* solutionData =
     &(this->catalystData->solutionData[0]);
+  this->isovals.resize(this->catalystData->niso);
+  std::copy(this->catalystData->isovalues,
+            this->catalystData->isovalues+this->catalystData->niso,
+            this->isovals.begin());
 
   typedef ::vtkm::cont::DeviceAdapterTagCuda CudaTag;
 
