@@ -68,6 +68,7 @@ int vtkPyFRContourFilter::RequestData(
   output->SetColorPalette(this->ColorPalette,this->ColorRange);
   filter.MapFieldOntoIsosurfaces(this->MappedField,input->GetData(),
                                  output->GetData());
+  this->minmax = filter.Range();
   output->Modified();
   return 1;
 }
@@ -117,6 +118,10 @@ void vtkPyFRContourFilter::SetMappedField(int i)
     }
 }
 //----------------------------------------------------------------------------
+
+std::pair<float,float> vtkPyFRContourFilter::Range() const {
+  return this->minmax;
+}
 
 void vtkPyFRContourFilter::PrintSelf(ostream& os, vtkIndent indent)
 {

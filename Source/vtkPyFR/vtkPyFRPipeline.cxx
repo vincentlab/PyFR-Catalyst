@@ -505,6 +505,15 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
 
     vtkUpdateFilter(this->Contour, dataDescription->GetTime());
     vtkUpdateFilter(this->Slice, dataDescription->GetTime());
+    {
+      vtkObjectBase* obj = this->Contour->GetClientSideObject();
+      const vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
+      const std::pair<float,float> mm = filt->Range();
+      std::ostringstream bds;
+      bds << "[catalyst] range" << rank() << ": " << mm.first << "--"
+          << mm.second << "\n";
+      std::cout << bds.str();
+    }
 
     vtkNew<vtkCollection> views;
     sessionProxyManager->GetProxies("views",views.GetPointer());

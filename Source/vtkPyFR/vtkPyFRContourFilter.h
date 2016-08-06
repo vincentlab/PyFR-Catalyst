@@ -2,6 +2,7 @@
 #define VTKPYFRDATACONTOURFILTER_H
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "vtkPyFRContourDataAlgorithm.h"
@@ -22,6 +23,9 @@ public:
 
   void SetContourField(int i);
   void SetMappedField(int i);
+
+  // Returns the min/max of the scalar field we are contouring.
+  std::pair<float,float> Range() const;
 
   vtkSetMacro(ColorPalette,int);
   vtkGetMacro(ColorPalette,int);
@@ -45,5 +49,7 @@ private:
 
   vtkPyFRContourFilter(const vtkPyFRContourFilter&);
   void operator=(const vtkPyFRContourFilter&);
+
+  std::pair<float,float> minmax;
 };
 #endif
