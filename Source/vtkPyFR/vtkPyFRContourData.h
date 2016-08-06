@@ -24,7 +24,7 @@ public:
   void ReleaseResources();
 
   void GetBounds(double*);
-  double* GetBounds();
+  const double* GetBounds();
 
   bool HasData() const;
   bool HasData(int i) const;

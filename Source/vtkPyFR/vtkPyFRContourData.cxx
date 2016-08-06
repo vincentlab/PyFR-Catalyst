@@ -100,7 +100,7 @@ void vtkPyFRContourData::GetBounds(double* bounds)
 }
 
 //----------------------------------------------------------------------------
-double* vtkPyFRContourData::GetBounds()
+const double* vtkPyFRContourData::GetBounds()
 {
   // if (this->GetMTime() > this->BoundsUpdateTime)
   //   {
