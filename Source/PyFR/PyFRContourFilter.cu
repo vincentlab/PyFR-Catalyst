@@ -1,12 +1,43 @@
+#define BOOST_SP_DISABLE_THREADS
+#include <algorithm>
+#include <cfloat>
+#include <vtkm/cont/cuda/DeviceAdapterCuda.h>
+#include <vtkm/Math.h>
 #include "PyFRContourFilter.h"
 
 #include "CrinkleClip.h"
 #include "PyFRData.h"
 #include "PyFRContourData.h"
 
+template<typename DeviceAdapter>
+class tjfMinMax {
+public:
+  struct minFunctor {
+    VTKM_EXEC_EXPORT float
+    operator()(const float& a, const float& b) const {
+      return vtkm::Min(a, b);
+    }
+  };
+  struct maxFunctor {
+    VTKM_EXEC_EXPORT float
+    operator()(const float& a, const float& b) const {
+      return vtkm::Max(a, b);
+    }
+  };
+
+  void Run(PyFRData::ScalarDataArrayHandle array, float* mn, float* mx) {
+    typedef typename vtkm::cont::DeviceAdapterAlgorithm<DeviceAdapter>
+      DeviceAlgorithms;
+    *mn = DeviceAlgorithms::Reduce(array, FLT_MAX, minFunctor());
+    *mx = DeviceAlgorithms::Reduce(array, FLT_MIN, maxFunctor());
+  }
+};
+
 //----------------------------------------------------------------------------
 PyFRContourFilter::PyFRContourFilter() : ContourField(0)
 {
+  minmax[0] = FLT_MIN;
+  minmax[1] = FLT_MAX;
 }
 
 //----------------------------------------------------------------------------
@@ -32,6 +63,10 @@ void PyFRContourFilter::operator()(PyFRData* input,
     .CastToArrayHandle(PyFRData::ScalarDataArrayHandle::ValueType(),
                        PyFRData::ScalarDataArrayHandle::StorageTag());
 
+  // compute the range, client can query later via ::Range().
+  tjfMinMax<vtkm::cont::DeviceAdapterTagCuda>().
+    Run(contourArray, &this->minmax[0], &this->minmax[1]);
+
   DataVec dataVec;
   Vec3HandleVec verticesVec;
   Vec3HandleVec normalsVec;
@@ -49,8 +84,7 @@ void PyFRContourFilter::operator()(PyFRData* input,
                        contourArray,
                        verticesVec,
                        normalsVec);
-}
-
+} 
 //----------------------------------------------------------------------------
 void PyFRContourFilter::MapFieldOntoIsosurfaces(int field,
                                                 PyFRData* input,
@@ -79,4 +113,11 @@ void PyFRContourFilter::MapFieldOntoIsosurfaces(int field,
 
   isosurfaceFilter.MapFieldOntoIsosurfaces(projectedArray,
                                            scalarDataHandleVec);
+}
+
+std::pair<float,float> PyFRContourFilter::Range() const {
+  std::pair<float,float> mm;
+  mm.first = this->minmax[0];
+  mm.second = this->minmax[1];
+  return mm;
 }

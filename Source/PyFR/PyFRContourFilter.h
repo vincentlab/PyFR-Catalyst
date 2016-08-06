@@ -4,6 +4,7 @@
 #define BOOST_SP_DISABLE_THREADS
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <vtkm/cont/cuda/DeviceAdapterCuda.h>
@@ -32,9 +33,14 @@ public:
   void operator ()(PyFRData*,PyFRContourData*);
   void MapFieldOntoIsosurfaces(int,PyFRData*,PyFRContourData*);
 
+  // Returns the min/max of the scalar we are computing the isosurface on.  Not
+  // valid until operator() is applied.
+  std::pair<float,float> Range() const;
+
 protected:
   IsosurfaceFilter isosurfaceFilter;
   std::vector<FPType> ContourValues;
   int ContourField;
+  float minmax[2];
 };
 #endif
