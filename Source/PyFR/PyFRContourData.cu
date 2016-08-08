@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "PyFRContourData.h"
 
 #include "Bounds.h"
@@ -81,13 +82,12 @@ void PyFRContourData::ComputeBounds(FPType* bounds) const
     {
     FPType b[6];
     this->ComputeContourBounds(i,b);
-    for (unsigned j=0;j<3;j++)
-      {
-      int jj = 2*j;
-      bounds[jj] = (bounds[jj] < b[jj] ? bounds[jj] : b[jj]);
-      jj++;
-      bounds[jj] = (bounds[jj] > b[jj] ? bounds[jj] : b[jj]);
-      }
+    bounds[0] = std::min(bounds[0], b[0]);
+    bounds[1] = std::max(bounds[1], b[1]);
+    bounds[2] = std::min(bounds[2], b[2]);
+    bounds[3] = std::max(bounds[3], b[3]);
+    bounds[4] = std::min(bounds[4], b[4]);
+    bounds[5] = std::max(bounds[5], b[5]);
     }
 }
 
