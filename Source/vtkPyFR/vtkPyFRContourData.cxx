@@ -76,12 +76,11 @@ void vtkPyFRContourData::ReleaseResources()
 //----------------------------------------------------------------------------
 void vtkPyFRContourData::GetBounds(double* bounds)
 {
-  bounds[0] = -4.48;
-  bounds[1] = 53.4;
-  bounds[2] = -32.5;
-  bounds[3] = 32.5;
-  bounds[4] = -32.4;
-  bounds[5] = 32.4;
+  FPType b[6];
+  this->data->ComputeBounds(b);
+  for(size_t i=0; i < 6; ++i) {
+    bounds[i] = b[i];
+  }
 
   // if (this->GetMTime() > this->BoundsUpdateTime)
   //   {
@@ -112,12 +111,7 @@ const double* vtkPyFRContourData::GetBounds()
   //     this->Bounds[i] = b[i];
   //     }
   //   }
-  this->Bounds[0] = -4.48;
-  this->Bounds[1] = 53.4;
-  this->Bounds[2] = -32.5;
-  this->Bounds[3] = 32.5;
-  this->Bounds[4] = -32.4;
-  this->Bounds[5] = 32.4;
+  this->GetBounds(this->Bounds);
 
   return this->Bounds;
 }
