@@ -46,7 +46,8 @@ struct CatalystData
   int nCellTypes;
   MeshDataForCellType* meshData;
   SolutionDataForCellType* solutionData;
-  float* isovalues;
-  unsigned niso;
+  float* isovalues; /* isovalues to compute */
+  unsigned niso; /* number of isovalues in above array */
+  bool metadata; /* should we print out per-TS metadata? */
 };
 #endif

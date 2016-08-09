@@ -73,6 +73,10 @@ public:
 
   std::vector<float> isovalues() const { return this->isovals; }
 
+  // Should we output per-timestep metadata?  This is useful for configuring
+  // subsequent runs, but impose extraneous global comm.
+  bool PrintMetadata() const;
+
 private:
   static std::map<int,std::string> fieldName;
   static std::map<std::string,int> fieldIndex;

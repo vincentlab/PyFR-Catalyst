@@ -151,3 +151,7 @@ void PyFRData::Init(void* data)
 void PyFRData::Update()
 {
 }
+
+bool PyFRData::PrintMetadata() const {
+  return this->catalystData->metadata;
+}
