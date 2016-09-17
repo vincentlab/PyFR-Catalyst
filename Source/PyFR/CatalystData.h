@@ -49,5 +49,8 @@ struct CatalystData
   float* isovalues; /* isovalues to compute */
   unsigned niso; /* number of isovalues in above array */
   bool metadata; /* should we print out per-TS metadata? */
+  float* eye; /* 3-tuple, camera position */
+  float* ref; /* 3-tuple, camera reference point */
+  float* vup; /* 3-tuple, view up vector */
 };
 #endif

@@ -64,6 +64,9 @@ void PyFRData::Init(void* data)
   std::copy(this->catalystData->isovalues,
             this->catalystData->isovalues+this->catalystData->niso,
             this->isovals.begin());
+  std::copy(this->catalystData->eye, this->catalystData->eye+3, this->eye);
+  std::copy(this->catalystData->ref, this->catalystData->ref+3, this->ref);
+  std::copy(this->catalystData->vup, this->catalystData->vup+3, this->vup);
 
   typedef ::vtkm::cont::DeviceAdapterTagCuda CudaTag;
 

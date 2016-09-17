@@ -77,6 +77,13 @@ public:
   // subsequent runs, but impose extraneous global comm.
   bool PrintMetadata() const;
 
+  /// Camera information as given by the user.
+  ///@{
+  float eye[3];
+  float ref[3];
+  float vup[3];
+  ///@}
+
 private:
   static std::map<int,std::string> fieldName;
   static std::map<std::string,int> fieldIndex;
