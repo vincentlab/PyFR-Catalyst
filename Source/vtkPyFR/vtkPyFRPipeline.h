@@ -5,6 +5,7 @@
 #include <vtkSmartPointer.h>
 #include <string>
 
+class PyFRData;
 class vtkCPDataDescription;
 class vtkLiveInsituLink;
 class vtkPyFRContourData;
@@ -34,6 +35,8 @@ virtual int RequestDataDescription(vtkCPDataDescription* dataDescription);
 protected:
   vtkPyFRPipeline();
   virtual ~vtkPyFRPipeline();
+
+  const PyFRData* PyData(vtkCPDataDescription*) const;
 
 private:
   vtkPyFRPipeline(const vtkPyFRPipeline&); // Not implemented

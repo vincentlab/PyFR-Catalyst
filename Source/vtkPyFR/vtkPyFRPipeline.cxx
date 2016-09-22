@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <sstream>
+#include <mpi.h>
 
 #include "vtkPyFRPipeline.h"
 
@@ -10,6 +11,7 @@
 #include <vtkCPInputDataDescription.h>
 #include <vtkDataSetMapper.h>
 #include <vtkLiveInsituLink.h>
+#include <vtkMPICommunicator.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkPlane.h>
@@ -129,6 +131,14 @@ vtkPyFRPipeline::~vtkPyFRPipeline()
 {
   if (this->InsituLink)
     this->InsituLink->Delete();
+}
+
+const PyFRData*
+vtkPyFRPipeline::PyData(vtkCPDataDescription* desc) const {
+  vtkPyFRData* pyfrData =
+    vtkPyFRData::SafeDownCast(desc->
+                              GetInputDescriptionByName("input")->GetGrid());
+  return pyfrData->GetData();
 }
 
 //----------------------------------------------------------------------------
@@ -305,13 +315,6 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   this->SliceMapper = vtkSmartPointer<vtkPyFRMapper>::New();
   vtkAddActor(this->ContourMapper, this->Contour, polydataViewer);
   //vtkAddActor(this->SliceMapper, this->Slice, polydataViewer);
-  const double* bds = this->ContourMapper->GetBounds();
-  {
-    std::ostringstream b;
-    b << "[catalyst] world bounds" << rank() << ": [ ";
-    std::copy(bds, bds+6, std::ostream_iterator<double>(b, ", "));
-    b << "]\n"; std::cout << b.str();
-  }
 
   if (postFilterWrite)
     {
@@ -431,6 +434,19 @@ int vtkPyFRPipeline::RequestDataDescription(
   return 1;
 }
 
+static void
+output_camera(/*const*/ vtkCamera* cam) {
+  double eye[3] = {0.0};
+  double ref[3] = {0.0};
+  double vup[3] = {0.0};
+  cam->GetPosition(eye);
+  cam->GetFocalPoint(ref);
+  cam->GetViewUp(vup);
+  printf("eye={%lg %lg %lg} ref={%lf %lf %lf} vup={%lf %lf %lf}\n",
+         eye[0],eye[1],eye[2], ref[0],ref[1],ref[2],
+         vup[0],vup[1],vup[2]);
+}
+
 //----------------------------------------------------------------------------
 int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
 {
@@ -505,14 +521,30 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
 
     vtkUpdateFilter(this->Contour, dataDescription->GetTime());
     vtkUpdateFilter(this->Slice, dataDescription->GetTime());
-    {
-      vtkObjectBase* obj = this->Contour->GetClientSideObject();
-      const vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
-      const std::pair<float,float> mm = filt->Range();
-      std::ostringstream bds;
-      bds << "[catalyst] range" << rank() << ": " << mm.first << "--"
-          << mm.second << "\n";
-      std::cout << bds.str();
+    if(this->PyData(dataDescription)->PrintMetadata()) {
+        double* bds = this->ContourMapper->GetBounds();
+        reduce(&bds[0], 1, vtkCommunicator::MIN_OP);
+        reduce(&bds[1], 1, vtkCommunicator::MAX_OP);
+        reduce(&bds[2], 1, vtkCommunicator::MIN_OP);
+        reduce(&bds[3], 1, vtkCommunicator::MAX_OP);
+        reduce(&bds[4], 1, vtkCommunicator::MIN_OP);
+        reduce(&bds[5], 1, vtkCommunicator::MAX_OP);
+        std::ostringstream b;
+        b << "[catalyst] world bounds: [ ";
+        std::copy(bds, bds+6, std::ostream_iterator<double>(b, ", "));
+        b << "]\n";
+        root(std::cout << b.str());
+
+        b.str("");
+        b.clear();
+        vtkObjectBase* obj = this->Contour->GetClientSideObject();
+        const vtkPyFRContourFilter* filt =
+            vtkPyFRContourFilter::SafeDownCast(obj);
+        std::pair<float,float> mm = filt->Range();
+        reduce(&mm.first, 1, vtkCommunicator::MIN_OP);
+        reduce(&mm.second, 1, vtkCommunicator::MAX_OP);
+        b << "[catalyst] range: " << mm.first << "--" << mm.second << "\n";
+        root(std::cout << b.str());
     }
 
     vtkNew<vtkCollection> views;
@@ -526,6 +558,7 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
       viewProxy->UpdateVTKObjects();
       viewProxy->Update();
 
+      const PyFRData* pyd = this->PyData(dataDescription);
       vtkWeakPointer<vtkRenderWindow> rw = viewProxy->GetRenderWindow();
       vtkWeakPointer<vtkRendererCollection> rens = rw->GetRenderers();
       assert(rens);
@@ -533,23 +566,23 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
       ren->ResetCamera();
       ren->ResetCameraClippingRange();
       vtkWeakPointer<vtkCamera> cam = ren->GetActiveCamera();
-      double eye[3] = {0.0};
-      double ref[3] = {0.0};
-      double vup[3] = {0.0};
-      cam->GetPosition(eye);
-      cam->GetFocalPoint(ref);
-      cam->GetViewUp(vup);
-      root(printf("eye={%lg %lg %lg} ref={%lf %lf %lf} vup={%lf %lf %lf}\n",
-                  eye[0],eye[1],eye[2], ref[0],ref[1],ref[2],
-                  vup[0],vup[1],vup[2]));
-#if 0
-      // tjf -- these are okay for the taylor green case.
-      eye[2] = 30.0;
-      ref[0] = 0.0;
-      eye[0] = 5.0;
-      cam->SetPosition(eye);
-      cam->SetFocalPoint(ref);
-#endif
+      const float* eye = pyd->eye;
+      if(!std::isnan(eye[0]) && !std::isnan(eye[1]) && !std::isnan(eye[2])) {
+        cam->SetPosition(eye[0], eye[1], eye[2]);
+      }
+      const float* ref = pyd->ref;
+      if(!std::isnan(ref[0]) && !std::isnan(ref[1]) && !std::isnan(ref[2])) {
+        cam->SetFocalPoint(ref[0], ref[1], ref[2]);
+      }
+      const float* vup = pyd->vup;
+      if(!std::isnan(vup[0]) && !std::isnan(vup[1]) && !std::isnan(vup[2])) {
+        cam->SetViewUp(vup[0], vup[1], vup[2]);
+      }
+      root(
+        if(this->PyData(dataDescription)->PrintMetadata()) {
+          output_camera(cam);
+        }
+      );
       const int magnification = 1;
       const int quality = 100;
       char fname[32] = {0};
