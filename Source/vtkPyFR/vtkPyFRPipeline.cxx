@@ -67,6 +67,31 @@ PV_PLUGIN_IMPORT_INIT(pyfr_plugin_fp32)
 PV_PLUGIN_IMPORT_INIT(pyfr_plugin_fp64)
 #endif
 
+#undef root
+#define root(stmt) \
+  do { \
+    vtkMPICommunicator* comm = vtkMPICommunicator::GetWorldCommunicator(); \
+    const vtkIdType rank = comm->GetLocalProcessId(); \
+    if(0 == rank) { \
+      stmt; \
+    } \
+  } while(0)
+
+namespace {
+// Simplified reduction interface that assumes we want to go to the root.
+template<typename T> void
+reduce(T* v, size_t n, vtkCommunicator::StandardOperations op) {
+  vtkMPICommunicator* comm = vtkMPICommunicator::GetWorldCommunicator();
+  const vtkIdType rank = comm->GetLocalProcessId();
+  const int dest = 0;
+  if(rank == 0) {
+    comm->Reduce((T*)MPI_IN_PLACE, v, n, op, dest);
+  } else {
+    comm->Reduce(v, NULL, n, op, dest);
+  }
+}
+}
+
 template <class Mapper>
 void vtkAddActor(vtkSmartPointer<Mapper> mapper,
                  vtkSMSourceProxy* filter,
@@ -132,7 +157,6 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   // visualization process.
   this->InsituLink->SetHostname(hostName);
   this->InsituLink->SetInsituPort(port);
-  std::cout << "[tjfCatalyst] in situ link to " << hostName << ":" << port << "\n";
 
   // Grab the data object from the data description
   vtkPyFRData* pyfrData =
@@ -255,12 +279,13 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   const PyFRData* dta = pyfrData->GetData();
   const std::vector<float> isovalues = dta->isovalues();
   for(size_t i=0; i < isovalues.size(); ++i) {
-    printf("setting isovalue %zu: %g\n", i, isovalues[i]);
+    root(printf("[catalyst] setting isovalue %zu: %g\n", i, isovalues[i]));
     vtkSMPropertyHelper(this->Contour, "ContourValues").Set(i, isovalues[i]);
   }
   auto mm = std::minmax_element(isovalues.begin(), isovalues.end());
   const double mm_isocol[2] = {*mm.first-1.0, *mm.second+1.0};
-  printf("Setting color range: %g--%g.\n", mm_isocol[0], mm_isocol[1]);
+  root(printf("[catalyst] contour color range: %g--%g.\n", mm_isocol[0],
+              mm_isocol[1]));
   vtkSMPropertyHelper(this->Contour, "ColorRange").Set(mm_isocol, 2);
 
   this->Contour->UpdateVTKObjects();
@@ -281,9 +306,12 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   vtkAddActor(this->ContourMapper, this->Contour, polydataViewer);
   //vtkAddActor(this->SliceMapper, this->Slice, polydataViewer);
   const double* bds = this->ContourMapper->GetBounds();
-  std::cout << "[tjfCatalyst] bounds: [ ";
-  std::copy(bds, bds+6, std::ostream_iterator<double>(std::cout, ", "));
-  std::cout << "]\n";
+  {
+    std::ostringstream b;
+    b << "[catalyst] world bounds" << rank() << ": [ ";
+    std::copy(bds, bds+6, std::ostream_iterator<double>(b, ", "));
+    b << "]\n"; std::cout << b.str();
+  }
 
   if (postFilterWrite)
     {
@@ -502,8 +530,9 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
       cam->GetPosition(eye);
       cam->GetFocalPoint(ref);
       cam->GetViewUp(vup);
-      printf("eye={%lg %lg %lg} ref={%lf %lf %lf} vup={%lf %lf %lf}\n",
-             eye[0],eye[1],eye[2], ref[0],ref[1],ref[2], vup[0],vup[1],vup[2]);
+      root(printf("eye={%lg %lg %lg} ref={%lf %lf %lf} vup={%lf %lf %lf}\n",
+                  eye[0],eye[1],eye[2], ref[0],ref[1],ref[2],
+                  vup[0],vup[1],vup[2]));
 #if 0
       // tjf -- these are okay for the taylor green case.
       eye[2] = 30.0;

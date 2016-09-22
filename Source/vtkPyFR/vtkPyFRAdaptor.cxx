@@ -8,6 +8,7 @@
 #include <vtkCPDataDescription.h>
 #include <vtkCPInputDataDescription.h>
 #include <vtkCPProcessor.h>
+#include <vtkMPICommunicator.h>
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
 #include <vtkSMSourceProxy.h>
@@ -25,6 +26,15 @@ namespace
   vtkCPProcessor* Processor = NULL;
 }
 
+#define root(stmt) \
+  do { \
+    vtkMPICommunicator* comm = vtkMPICommunicator::GetWorldCommunicator(); \
+    const vtkIdType rank = comm->GetLocalProcessId(); \
+    if(0 == rank) { \
+      stmt; \
+    } \
+  } while(0)
+
 //----------------------------------------------------------------------------
 void* CatalystInitialize(char* hostName, int pyport, char* outputfile, void* p)
 {
@@ -35,14 +45,14 @@ void* CatalystInitialize(char* hostName, int pyport, char* outputfile, void* p)
   const char* host = hostName;
   int port = pyport;
   if(NULL != envHost) {
-    std::cout << "Overriding config file host with env var.\n";
+    root(std::cout << "[catalyst] Overriding config file host with env var.\n");
     host = envHost;
   }
   if(NULL != envPortS) {
-    std::cout << "Overriding config file port with env var.\n";
+    root(std::cout << "[catalyst] Overriding config file port with env var.\n");
     port = atoi(envPortS);
   }
-  std::cout << "[tjfCatalyst] host=" << host << ":" << port << "\n";
+  root(std::cout << "[catalyst] host=" << host << ":" << port << "\n");
   assert(0 < port && port < 65536);
 
   if(Processor == NULL)
@@ -69,7 +79,7 @@ void CatalystFinalize(void* p)
   vtkPyFRPipeline* pipeline =
     vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
 
-  printf("[tjfCatalyst] finalizing %p at %s:%d\n", p, __FILE__, __LINE__);
+  root(printf("[catalyst] finalizing %p at %s:%d\n", p, __FILE__, __LINE__));
 
   { //release contour gpu memory
   vtkObjectBase* clientSideContourBase = pipeline->GetContour()->GetClientSideObject();
@@ -107,8 +117,8 @@ void CatalystCoProcess(double time,unsigned int timeStep, void* p,bool lastTimeS
   dataDescription->AddInput("input");
   dataDescription->SetTimeData(time, timeStep);
 #ifdef TJF_DEBUG
-  printf("[tjfCatalyst] coprocessing(%lf, %u, %p, %d) at %s:%d\n", time, timeStep, p,
-         (int)lastTimeStep, __FILE__, __LINE__);
+  root(printf("[catalyst] coprocessing(%lf, %u, %p, %d) at %s:%d\n", time,
+              timeStep, p, (int)lastTimeStep, __FILE__, __LINE__));
 #endif
   if(lastTimeStep == true)
     {
