@@ -33,6 +33,12 @@ public:
   }
 };
 
+struct ContourFilterCellSets
+  : vtkm::ListTagBase<
+      PyFRData::CellSet,
+      vtkm::worklet::CrinkleClipTraits<typename PyFRData::CellSet>::CellSet
+    > {};
+
 //----------------------------------------------------------------------------
 PyFRContourFilter::PyFRContourFilter() : ContourField(0)
 {
@@ -52,11 +58,8 @@ void PyFRContourFilter::operator()(PyFRData* input,
   typedef std::vector<vtkm::cont::ArrayHandle<vtkm::Vec<FPType,3> > >
     Vec3HandleVec;
   typedef std::vector<FPType> DataVec;
-  typedef vtkm::worklet::CrinkleClipTraits<typename PyFRData::CellSet>::CellSet
-    CellSet;
 
   const vtkm::cont::DataSet& dataSet = input->GetDataSet();
-
   vtkm::cont::Field contourField =
     dataSet.GetField(PyFRData::FieldName(this->ContourField));
   PyFRData::ScalarDataArrayHandle contourArray = contourField.GetData()
@@ -79,11 +82,12 @@ void PyFRContourFilter::operator()(PyFRData* input,
     }
 
   isosurfaceFilter.Run(dataVec,
-                       dataSet.GetCellSet().CastTo(CellSet()),
-                       dataSet.GetCoordinateSystem(),
-                       contourArray,
-                       verticesVec,
-                       normalsVec);
+    dataSet.GetCellSet().ResetCellSetList(ContourFilterCellSets()),
+    dataSet.GetCoordinateSystem(),
+    contourArray,
+    verticesVec,
+    normalsVec
+  );
 } 
 //----------------------------------------------------------------------------
 void PyFRContourFilter::MapFieldOntoIsosurfaces(int field,
