@@ -247,6 +247,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
                                         "UnstructuredGridWriter");
     }
 
+#ifdef USE_CLIP
   // Add the clip filter
   this->Clip.TakeReference(
     vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
@@ -257,6 +258,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   this->Clip->UpdateVTKObjects();
   this->controller->PostInitializeProxy(this->Clip);
   this->controller->RegisterPipelineProxy(this->Clip,"Clip");
+#endif
 
   // Add the slice filter
   this->Slice.TakeReference(
@@ -281,7 +283,12 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     vtkSMInputProperty::SafeDownCast(this->Contour->GetProperty("Input"));
 
   this->controller->PreInitializeProxy(this->Contour);
+#ifdef USE_CLIP
   vtkSMPropertyHelper(this->Contour, "Input").Set(this->Clip, 0);
+#else
+  // ignore the clip filter, use input directly.
+  vtkSMPropertyHelper(this->Contour, "Input").Set(producer, 0);
+#endif
   vtkSMPropertyHelper(this->Contour,"ContourField").Set(0);
   vtkSMPropertyHelper(this->Contour,"ColorField").Set(0);
 
