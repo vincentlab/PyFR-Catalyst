@@ -72,6 +72,15 @@ void* CatalystInitialize(char* hostName, int pyport, char* outputfile, void* p)
   return data;
 }
 
+void
+CatalystCamera(void* p, const float eye[3], const float ref[3],
+               const float vup[3]) {
+  vtkPyFRData* data = static_cast<vtkPyFRData*>(p);
+  std::copy(eye, eye+3, data->GetData()->eye);
+  std::copy(ref, ref+3, data->GetData()->ref);
+  std::copy(vup, vup+3, data->GetData()->vup);
+}
+
 //----------------------------------------------------------------------------
 void CatalystFinalize(void* p)
 {
