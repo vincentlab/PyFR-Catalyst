@@ -146,6 +146,31 @@
       </DoubleVectorProperty>
     </SourceProxy>
     <!-- ==================================================================== -->
+    <!-- ==================================================================== -->
+    <SourceProxy name="PyFRMergePointsFilter"
+     class="vtkPyFRMergePointsFilter" label="Merge Duplicate Points PyFR Data">
+      <Documentation long_help="Merge exactly duplicate points inside PyFR
+        Data by generating a new connectivity array. The output data of this
+        filter will have same number of points as the input, but the
+        connectivity will not use them all"
+        short_help="Merge duplicate points in PyFR data.">
+        Merges duplicate points by fixing the connectivity. We determine which
+        points are identical and than replace all references to the duplicate
+        points in the topology. No reduction in the points occur.
+      </Documentation>
+      <InputProperty
+          name="Input"
+          command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="PyFRData"/>
+        </DataTypeDomain>
+      </InputProperty>
+    </SourceProxy>
+    <!-- ==================================================================== -->
     <SourceProxy name="PyFRParallelSliceFilter"
 		 class="vtkPyFRParallelSliceFilter" label="Slice PyFR Data">
       <Documentation long_help="Slice PyFR data with parallel planes."

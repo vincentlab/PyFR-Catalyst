@@ -4,6 +4,7 @@ set(PyFR_SRCS
   PyFRCrinkleClipFilter.cu
   PyFRContourFilter.cu
   PyFRConverter.cu
+  PyFRMergePointsFilter.cu
   PyFRParallelSliceFilter.cu
   PyFRWriter.cu
 )

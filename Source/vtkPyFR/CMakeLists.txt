@@ -10,6 +10,7 @@ set(vtkPyFR_SRCS
   vtkPyFRDataConverter.cxx
   vtkPyFRIndexBufferObject.cxx
   vtkPyFRMapper.cxx
+  vtkPyFRMergePointsFilter.cxx
   vtkPyFRParallelSliceFilter.cxx
   vtkPyFRVertexBufferObject.cxx
   vtkXMLPyFRContourDataWriter.cxx
