@@ -53,6 +53,7 @@
 #include "vtkPyFRContourData.h"
 #include "vtkPyFRContourFilter.h"
 #include "vtkPyFRMapper.h"
+#include "vtkPyFRMergePointsFilter.h"
 #include "vtkPyFRParallelSliceFilter.h"
 #include "vtkXMLPyFRDataWriter.h"
 #include "vtkXMLPyFRContourDataWriter.h"
@@ -247,14 +248,26 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
                                         "UnstructuredGridWriter");
     }
 
+  // Add the merge points filter
+  vtkSmartPointer<vtkSMSourceProxy> mergePoints;
+  mergePoints.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(
+      sessionProxyManager->NewProxy("filters", "PyFRMergePointsFilter")));
+  controller->PreInitializeProxy(mergePoints);
+  vtkSMPropertyHelper(mergePoints, "Input").Set(producer, 0);
+  mergePoints->UpdateVTKObjects();
+  controller->PostInitializeProxy(mergePoints);
+  controller->RegisterPipelineProxy(mergePoints,"MergePoints");
+
+
 #ifdef USE_CLIP
   // Add the clip filter
   this->Clip.TakeReference(
     vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
                                    NewProxy("filters",
                                             "PyFRCrinkleClipFilter")));
-  this->controller->PreInitializeProxy(this->Clip);
-  vtkSMPropertyHelper(this->Clip, "Input").Set(producer, 0);
+  controller->PreInitializeProxy(this->Clip);
+  vtkSMPropertyHelper(this->Clip, "Input").Set(mergePoints, 0);
   this->Clip->UpdateVTKObjects();
   this->controller->PostInitializeProxy(this->Clip);
   this->controller->RegisterPipelineProxy(this->Clip,"Clip");
@@ -266,7 +279,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
                                    NewProxy("filters",
                                             "PyFRParallelSliceFilter")));
   this->controller->PreInitializeProxy(this->Slice);
-  vtkSMPropertyHelper(this->Slice, "Input").Set(producer, 0);
+  vtkSMPropertyHelper(this->Slice, "Input").Set(mergePoints, 0);
   vtkSMPropertyHelper(this->Slice,"ColorField").Set(0);
   double sliceColorRange[2] = {0.695,0.7385};
   vtkSMPropertyHelper(this->Slice,"ColorRange").Set(sliceColorRange,2);
@@ -287,7 +300,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   vtkSMPropertyHelper(this->Contour, "Input").Set(this->Clip, 0);
 #else
   // ignore the clip filter, use input directly.
-  vtkSMPropertyHelper(this->Contour, "Input").Set(producer, 0);
+  vtkSMPropertyHelper(this->Contour, "Input").Set(mergePoints, 0);
 #endif
   vtkSMPropertyHelper(this->Contour,"ContourField").Set(0);
   vtkSMPropertyHelper(this->Contour,"ColorField").Set(0);

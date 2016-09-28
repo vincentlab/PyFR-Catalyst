@@ -25,7 +25,7 @@ public:
   virtual void Initialize(const char* hostName, int port, char* fileName,
                           vtkCPDataDescription* dataDescription);
 
-virtual int RequestDataDescription(vtkCPDataDescription* dataDescription);
+  virtual int RequestDataDescription(vtkCPDataDescription* dataDescription);
 
   virtual int CoProcess(vtkCPDataDescription* dataDescription);
 

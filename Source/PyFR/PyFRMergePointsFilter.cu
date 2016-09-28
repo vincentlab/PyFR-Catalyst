@@ -14,6 +14,11 @@ PyFRMergePointsFilter::PyFRMergePointsFilter()
 {
 }
 
+PyFRMergePointsFilter::~PyFRMergePointsFilter()
+{
+
+}
+
 void PyFRMergePointsFilter::operator()(PyFRData* inputData,
                                        PyFRData* outputData)
 {
