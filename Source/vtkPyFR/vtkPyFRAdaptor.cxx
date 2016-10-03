@@ -72,7 +72,7 @@ void* CatalystInitialize(char* hostName, int pyport, char* outputfile, void* p)
   return data;
 }
 
-void
+extern "C" void
 CatalystCamera(void* p, const float eye[3], const float ref[3],
                const float vup[3]) {
   vtkPyFRData* data = static_cast<vtkPyFRData*>(p);
