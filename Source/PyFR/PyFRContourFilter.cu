@@ -12,24 +12,27 @@
 template<typename DeviceAdapter>
 class tjfMinMax {
 public:
+  template<typename T>
   struct minFunctor {
-    VTKM_EXEC_EXPORT float
-    operator()(const float& a, const float& b) const {
+    VTKM_EXEC_EXPORT T
+    operator()(const T& a, const T& b) const {
       return vtkm::Min(a, b);
     }
   };
+  template<typename T>
   struct maxFunctor {
-    VTKM_EXEC_EXPORT float
-    operator()(const float& a, const float& b) const {
+    VTKM_EXEC_EXPORT T
+    operator()(const T& a, const T& b) const {
       return vtkm::Max(a, b);
     }
   };
 
-  void Run(PyFRData::ScalarDataArrayHandle array, float* mn, float* mx) {
+  template<typename T> void
+  Run(PyFRData::ScalarDataArrayHandle array, T* mn, T* mx) {
     typedef typename vtkm::cont::DeviceAdapterAlgorithm<DeviceAdapter>
       DeviceAlgorithms;
-    *mn = DeviceAlgorithms::Reduce(array, FLT_MAX, minFunctor());
-    *mx = DeviceAlgorithms::Reduce(array, FLT_MIN, maxFunctor());
+    *mn = DeviceAlgorithms::Reduce(array, T(FLT_MAX), minFunctor<T>());
+    *mx = DeviceAlgorithms::Reduce(array, T(FLT_MIN), maxFunctor<T>());
   }
 };
 

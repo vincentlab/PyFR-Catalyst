@@ -41,6 +41,6 @@ protected:
   IsosurfaceFilter isosurfaceFilter;
   std::vector<FPType> ContourValues;
   int ContourField;
-  float minmax[2];
+  FPType minmax[2];
 };
 #endif
