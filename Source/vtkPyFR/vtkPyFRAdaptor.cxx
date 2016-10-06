@@ -13,6 +13,9 @@
 #include <vtkSmartPointer.h>
 #include <vtkSMSourceProxy.h>
 
+#include <vtkProcessModule.h>
+#include <vtkPVOptions.h>
+
 #include "PyFRData.h"
 
 #include "vtkPyFRPipeline.h"
@@ -59,6 +62,12 @@ void* CatalystInitialize(char* hostName, int pyport, char* outputfile, void* p)
     {
     Processor = vtkCPProcessor::New();
     Processor->Initialize();
+
+    //grab the vtkPVOptions and set the tile display parameters now
+    //that Initialize has occurred and the options have been created.
+    // vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
+    // vtkPVOptions* options = pm->GetOptions();
+    // options->SetTileDimensions(tileX,tileY);
     }
   vtkNew<vtkCPDataDescription> dataDescription;
   dataDescription->AddInput("input");
