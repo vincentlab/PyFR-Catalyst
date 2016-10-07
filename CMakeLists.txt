@@ -47,7 +47,7 @@ if (BuildServerLibs)
   find_package(BoostHeaders ${VTKm_REQUIRED_BOOST_VERSION} REQUIRED)
   include_directories(${Boost_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS})
 
-  set(fpList "float" CACHE INTERNAL "fpList")
+  set(fpList "float;double" CACHE INTERNAL "fpList")
   set(libSuffix_float fp32 CACHE INTERNAL "float suffix")
   set(libSuffix_double fp64 CACHE INTERNAL "double suffix")
 

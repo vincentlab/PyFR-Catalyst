@@ -64,7 +64,7 @@
 #define STRINGIFY(s) TOSTRING(s)
 #define TOSTRING(s) #s
 
-#ifdef SINGLE
+#ifdef PYFR_SINGLE
 PV_PLUGIN_IMPORT_INIT(pyfr_plugin_fp32)
 #else
 PV_PLUGIN_IMPORT_INIT(pyfr_plugin_fp64)
@@ -151,7 +151,7 @@ void vtkPyFRPipeline::Initialize(const char* hostName, int port, char* fileName,
   vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
 
   // Load PyFR plugin
-#ifdef SINGLE
+#ifdef PYFR_SINGLE
 PV_PLUGIN_IMPORT(pyfr_plugin_fp32)
 #else
 PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
