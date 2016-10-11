@@ -76,12 +76,15 @@ void PyFRParallelSliceFilter::operator()(PyFRData* input,
     normalsVec.push_back(output->GetContour(i).GetNormals());
     }
 
+  vtkm::cont::Timer<CudaTag> timer;
   isosurfaceFilter.Run(dataVec,
                        dataSet.GetCellSet().CastTo(CellSet()),
                        dataSet.GetCoordinateSystem(),
                        dataArray,
                        verticesVec,
                        normalsVec);
+
+  std::cout << "time to slice: " << timer.GetElapsedTime() << std::endl;
 }
 
 //----------------------------------------------------------------------------

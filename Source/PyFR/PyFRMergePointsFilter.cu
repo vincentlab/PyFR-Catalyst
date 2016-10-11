@@ -5,6 +5,7 @@
 
 #include "MergePoints.h"
 #include "PyFRData.h"
+#include <vtkm/cont/Timer.h>
 
 struct MergePointsFilterCellSets : vtkm::ListTagBase<PyFRData::CellSet>
 {
@@ -36,8 +37,11 @@ void PyFRMergePointsFilter::operator()(PyFRData* inputData,
 
   vtkm::worklet::MergePoints merge;
 
+  vtkm::cont::Timer<CudaTag> timer;
   merge.Run(input.GetCellSet().ResetCellSetList(MergePointsFilterCellSets()),
             coords, output, CudaTag());
+
+  std::cout << "time to compute merge points: " << timer.GetElapsedTime() << std::endl;
 
   for (vtkm::IdComponent i = 0; i < input.GetNumberOfFields(); i++)
     output.AddField(input.GetField(i));

@@ -4,6 +4,7 @@ set(PyFR_SRCS
   PyFRCrinkleClipFilter.cu
   PyFRContourFilter.cu
   PyFRConverter.cu
+  PyFRGradientFilter.cu
   PyFRMergePointsFilter.cu
   PyFRParallelSliceFilter.cu
   PyFRWriter.cu
@@ -13,7 +14,7 @@ set( PyFRLibs )
 foreach (fpType IN LISTS fpList)
   message(STATUS "setting up fpoint type '${fpType}'")
   set (pyfrLib "pyfr_${libSuffix_${fpType}}")
-  set( fp_cxx_flags "-DFPType=${fpType}" )
+  set( fp_cxx_flags "-DFPType=${fpType} -DVTKM_DEVICE_ADAPTER=VTKM_DEVICE_ADAPTER_CUDA" )
   cuda_add_library(${pyfrLib} SHARED ${PyFR_SRCS} OPTIONS ${fp_cxx_flags})
   set_target_properties(${pyfrLib} PROPERTIES COMPILE_FLAGS ${fp_cxx_flags})
 

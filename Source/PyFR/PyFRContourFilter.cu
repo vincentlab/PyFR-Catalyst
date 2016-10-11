@@ -9,6 +9,8 @@
 #include "PyFRData.h"
 #include "PyFRContourData.h"
 
+#include <vtkm/cont/Timer.h>
+
 template<typename DeviceAdapter>
 class tjfMinMax {
 public:
@@ -84,6 +86,7 @@ void PyFRContourFilter::operator()(PyFRData* input,
     normalsVec.push_back(output->GetContour(i).GetNormals());
     }
 
+  vtkm::cont::Timer<CudaTag> timer;
   isosurfaceFilter.Run(dataVec,
     dataSet.GetCellSet().ResetCellSetList(ContourFilterCellSets()),
     dataSet.GetCoordinateSystem(),
@@ -91,7 +94,9 @@ void PyFRContourFilter::operator()(PyFRData* input,
     verticesVec,
     normalsVec
   );
-} 
+
+  std::cout << "time to contour: " << timer.GetElapsedTime() << std::endl;
+}
 //----------------------------------------------------------------------------
 void PyFRContourFilter::MapFieldOntoIsosurfaces(int field,
                                                 PyFRData* input,
@@ -118,8 +123,12 @@ void PyFRContourFilter::MapFieldOntoIsosurfaces(int field,
     .CastToArrayHandle(PyFRData::ScalarDataArrayHandle::ValueType(),
                        PyFRData::ScalarDataArrayHandle::StorageTag());
 
+  vtkm::cont::Timer<CudaTag> timer;
   isosurfaceFilter.MapFieldOntoIsosurfaces(projectedArray,
                                            scalarDataHandleVec);
+
+  std::cout << "time to map onto contour: " << timer.GetElapsedTime() << std::endl;
+
 }
 
 std::pair<float,float> PyFRContourFilter::Range() const {

@@ -52,6 +52,7 @@
 #include "vtkPyFRCrinkleClipFilter.h"
 #include "vtkPyFRContourData.h"
 #include "vtkPyFRContourFilter.h"
+#include "vtkPyFRGradientFilter.h"
 #include "vtkPyFRMapper.h"
 #include "vtkPyFRMergePointsFilter.h"
 #include "vtkPyFRParallelSliceFilter.h"
@@ -260,6 +261,17 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   controller->RegisterPipelineProxy(mergePoints,"MergePoints");
 
 
+  // Add the gradient filter
+  vtkSmartPointer<vtkSMSourceProxy> gradients;
+  gradients.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(
+      sessionProxyManager->NewProxy("filters", "PyFRGradientFilter")));
+  controller->PreInitializeProxy(gradients);
+  vtkSMPropertyHelper(gradients, "Input").Set(mergePoints, 0);
+  gradients->UpdateVTKObjects();
+  controller->PostInitializeProxy(gradients);
+  controller->RegisterPipelineProxy(gradients,"Gradients");
+
 #ifdef USE_CLIP
   // Add the clip filter
   this->Clip.TakeReference(
@@ -267,7 +279,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
                                    NewProxy("filters",
                                             "PyFRCrinkleClipFilter")));
   controller->PreInitializeProxy(this->Clip);
-  vtkSMPropertyHelper(this->Clip, "Input").Set(mergePoints, 0);
+  vtkSMPropertyHelper(this->Clip, "Input").Set(gradients, 0);
   this->Clip->UpdateVTKObjects();
   this->controller->PostInitializeProxy(this->Clip);
   this->controller->RegisterPipelineProxy(this->Clip,"Clip");
@@ -279,7 +291,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
                                    NewProxy("filters",
                                             "PyFRParallelSliceFilter")));
   this->controller->PreInitializeProxy(this->Slice);
-  vtkSMPropertyHelper(this->Slice, "Input").Set(mergePoints, 0);
+  vtkSMPropertyHelper(this->Slice, "Input").Set(gradients, 0);
   vtkSMPropertyHelper(this->Slice,"ColorField").Set(0);
   double sliceColorRange[2] = {0.695,0.7385};
   vtkSMPropertyHelper(this->Slice,"ColorRange").Set(sliceColorRange,2);
@@ -300,7 +312,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   vtkSMPropertyHelper(this->Contour, "Input").Set(this->Clip, 0);
 #else
   // ignore the clip filter, use input directly.
-  vtkSMPropertyHelper(this->Contour, "Input").Set(mergePoints, 0);
+  vtkSMPropertyHelper(this->Contour, "Input").Set(gradients, 0);
 #endif
   vtkSMPropertyHelper(this->Contour,"ContourField").Set(0);
   vtkSMPropertyHelper(this->Contour,"ColorField").Set(0);

@@ -8,6 +8,7 @@ set(vtkPyFR_SRCS
   vtkPyFRData.cxx
   vtkPyFRDataAlgorithm.cxx
   vtkPyFRDataConverter.cxx
+  vtkPyFRGradientFilter.cxx
   vtkPyFRIndexBufferObject.cxx
   vtkPyFRMapper.cxx
   vtkPyFRMergePointsFilter.cxx

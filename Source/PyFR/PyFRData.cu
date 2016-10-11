@@ -33,8 +33,12 @@ bool PyFRData::PopulateMaps()
   fieldName[2] = "velocity_u";
   fieldName[3] = "velocity_v";
   fieldName[4] = "velocity_w";
+  fieldName[5] = "density_gradient_magnitude";
+  fieldName[6] = "pressure_gradient_magnitude";
+  fieldName[7] = "velocity_gradient_magnitude";
+  fieldName[8] = "velocity_qcriterion";
 
-  for (unsigned i=0;i<5;i++)
+  for (unsigned i=0;i<9;i++)
     fieldIndex[fieldName[i]] = i;
 
   return true;

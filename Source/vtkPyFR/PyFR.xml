@@ -145,7 +145,7 @@
         <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
     </SourceProxy>
-    <!-- ==================================================================== -->
+
     <!-- ==================================================================== -->
     <SourceProxy name="PyFRMergePointsFilter"
      class="vtkPyFRMergePointsFilter" label="Merge Duplicate Points PyFR Data">
@@ -170,6 +170,28 @@
         </DataTypeDomain>
       </InputProperty>
     </SourceProxy>
+
+    <!-- ==================================================================== -->
+    <SourceProxy name="PyFRGradientFilter"
+     class="vtkPyFRGradientFilter" label="Merge Duplicate Points PyFR Data">
+       <Documentation long_help="Estimate the gradient for each point or cell in a PyFRData"
+                     short_help="Compute gradients">
+                     The Gradient (PyFR) filter estimates the gradient
+                     vector at each point or cell.
+       </Documentation>
+      <InputProperty
+          name="Input"
+          command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="PyFRData"/>
+        </DataTypeDomain>
+      </InputProperty>
+    </SourceProxy>
+
     <!-- ==================================================================== -->
     <SourceProxy name="PyFRParallelSliceFilter"
 		 class="vtkPyFRParallelSliceFilter" label="Slice PyFR Data">

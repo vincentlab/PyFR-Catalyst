@@ -172,8 +172,13 @@ public:
         points.PrepareForInput(tag));
     mergepoints::PointEqual<DeviceTag> pointEqual(
         points.PrepareForInput(tag));
+
+    std::cout << "Merge Points info: \n ";
+    std::cout << "  connectivity length on input: " << reducedConn.GetNumberOfValues() << "\n ";
     Algorithms::Sort(reducedConn, pointLess);
     Algorithms::Unique(reducedConn, pointEqual);
+    std::cout << "  connectivity length after duplicate removed: " << reducedConn.GetNumberOfValues();
+    std::cout << std::endl;
 
     // 4
     vtkm::cont::ArrayHandle<vtkm::Id> temp;
