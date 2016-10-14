@@ -118,6 +118,7 @@ void vtkAddActor(vtkSmartPointer<Mapper> mapper,
 
 void vtkUpdateFilter(vtkSMSourceProxy* filter, double time)
 {
+  std::cout << "filter: " << filter->GetClassName() << " update to time: " << time << std::endl;
   filter->UpdatePipeline(time);
 }
 
@@ -482,6 +483,8 @@ output_camera(/*const*/ vtkCamera* cam) {
 //----------------------------------------------------------------------------
 int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
 {
+  std::cout << "vtkPyFRPipeline::CoProcess" << std::endl;
+
   vtkSMSessionProxyManager* sessionProxyManager =
     vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
 
