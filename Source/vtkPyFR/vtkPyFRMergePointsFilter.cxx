@@ -28,7 +28,7 @@ int vtkPyFRMergePointsFilter::PyFRDataTypeRegistered =
 vtkStandardNewMacro(vtkPyFRMergePointsFilter);
 
 //----------------------------------------------------------------------------
-vtkPyFRMergePointsFilter::vtkPyFRMergePointsFilter() : LastExecuteTime(0)
+vtkPyFRMergePointsFilter::vtkPyFRMergePointsFilter()
 {
 }
 
@@ -65,13 +65,9 @@ int vtkPyFRMergePointsFilter::RequestData(
   vtkPyFRData *output = vtkPyFRData::SafeDownCast(
     outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  if (this->GetMTime() > this->LastExecuteTime)
-    {
-    this->LastExecuteTime = this->GetMTime();
-    PyFRMergePointsFilter filter;
-    filter(input->GetData(),output->GetData());
-    output->Modified();
-    }
+  PyFRMergePointsFilter filter;
+  filter(input->GetData(),output->GetData());
+  output->Modified();
 
   return 1;
 }

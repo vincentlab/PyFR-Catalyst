@@ -21,8 +21,6 @@ public:
   int FillInputPortInformation(int,vtkInformation*);
 
 protected:
-  unsigned long LastExecuteTime;
-
   vtkPyFRMergePointsFilter();
   virtual ~vtkPyFRMergePointsFilter();
 

@@ -28,8 +28,7 @@ int vtkPyFRGradientFilter::PyFRDataTypeRegistered =
 vtkStandardNewMacro(vtkPyFRGradientFilter);
 
 //----------------------------------------------------------------------------
-vtkPyFRGradientFilter::vtkPyFRGradientFilter() :
-  LastExecuteTime(0)
+vtkPyFRGradientFilter::vtkPyFRGradientFilter()
 {
 }
 
@@ -66,13 +65,9 @@ int vtkPyFRGradientFilter::RequestData(
   vtkPyFRData *output = vtkPyFRData::SafeDownCast(
     outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  if (this->GetMTime() > this->LastExecuteTime)
-    {
-    this->LastExecuteTime = this->GetMTime();
-    PyFRGradientFilter filter;
-    filter(input->GetData(),output->GetData());
-    output->Modified();
-    }
+  PyFRGradientFilter filter;
+  filter(input->GetData(),output->GetData());
+  output->Modified();
 
   return 1;
 }
