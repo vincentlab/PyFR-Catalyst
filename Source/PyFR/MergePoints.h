@@ -21,34 +21,54 @@
 #ifndef vtk_m_worklet_MergePoints_h
 #define vtk_m_worklet_MergePoints_h
 
+#include "PyFRData.h"
+
 #include <vtkm/cont/ArrayHandle.h>
 #include <vtkm/cont/DeviceAdapter.h>
 
 #include <vtkm/cont/CellSetSingleType.h>
+#include <vtkm/cont/ArrayHandlePermutation.h>
 #include <vtkm/worklet/DispatcherMapField.h>
 #include <vtkm/worklet/WorkletMapField.h>
 
-#include <vtkm/exec/ExecutionWholeArray.h>
+namespace {
 
-#include "PyFRData.h"
+PyFRData::Vec3ArrayHandle
+make_Vec3Handle(const vtkm::cont::CoordinateSystem& coodSys)
+{
+  return coodSys.GetData().CastToArrayHandle(
+    PyFRData::Vec3ArrayHandle::ValueType(),
+    PyFRData::Vec3ArrayHandle::StorageTag());
+}
+
+PyFRData::CatalystMappedDataArrayHandle
+make_CatalystHandle(const vtkm::cont::Field& field)
+{
+  return field.GetData().CastToArrayHandle(
+    PyFRData::CatalystMappedDataArrayHandle::ValueType(),
+    PyFRData::CatalystMappedDataArrayHandle::StorageTag());
+}
+}
 
 namespace vtkm {
 namespace worklet {
 
 namespace mergepoints {
 
-template <typename DeviceTag> struct PointLess
+template <typename DeviceTag>
+struct PointLess
 {
-  typedef vtkm::cont::ArrayHandle< vtkm::Vec<FPType, 3> > PointHandle;
+  typedef vtkm::cont::ArrayHandle<vtkm::Vec<FPType, 3>> PointHandle;
   typedef typename PointHandle::template ExecutionTypes<DeviceTag>::PortalConst
-      PointHandleType;
+    PointHandleType;
 
-  PointLess(PointHandleType p) : Portal(p)
+  PointLess(PointHandleType p)
+    : Portal(p)
   {
   }
 
-  VTKM_EXEC_CONT_EXPORT bool operator()(const vtkm::Id& x,
-                                        const vtkm::Id& y) const
+  VTKM_EXEC_CONT_EXPORT bool operator()(
+    const vtkm::Id& x, const vtkm::Id& y) const
   {
     const vtkm::Vec<FPType, 3> a = this->Portal.Get(x);
     const vtkm::Vec<FPType, 3> b = this->Portal.Get(y);
@@ -72,18 +92,20 @@ template <typename DeviceTag> struct PointLess
   PointHandleType Portal;
 };
 
-template <typename DeviceTag> struct PointEqual
+template <typename DeviceTag>
+struct PointEqual
 {
-  typedef vtkm::cont::ArrayHandle< vtkm::Vec<FPType, 3> > PointHandle;
+  typedef vtkm::cont::ArrayHandle<vtkm::Vec<FPType, 3>> PointHandle;
   typedef typename PointHandle::template ExecutionTypes<DeviceTag>::PortalConst
-      PointHandleType;
+    PointHandleType;
 
-  PointEqual(PointHandleType p) : Portal(p)
+  PointEqual(PointHandleType p)
+    : Portal(p)
   {
   }
 
-  VTKM_EXEC_CONT_EXPORT bool operator()(const vtkm::Id& x,
-                                        const vtkm::Id& y) const
+  VTKM_EXEC_CONT_EXPORT bool operator()(
+    const vtkm::Id& x, const vtkm::Id& y) const
   {
     const vtkm::Vec<FPType, 3> a = this->Portal.Get(x);
     const vtkm::Vec<FPType, 3> b = this->Portal.Get(y);
@@ -92,116 +114,119 @@ template <typename DeviceTag> struct PointEqual
 
   PointHandleType Portal;
 };
-
-struct FillTopology : public vtkm::worklet::WorkletMapField
-{
-  typedef void ControlSignature(FieldIn<IdType> inConn,
-                                FieldOut<IdType> outConn,
-                                ExecObject reducedConn);
-  typedef void ExecutionSignature(_1, _2, _3);
-
-  template <typename FieldIn, typename FieldOut, typename WholeConn>
-  VTKM_EXEC_EXPORT void operator()(const FieldIn& inConn, FieldOut& outConn,
-                                   WholeConn reducedConn) const
-  {
-    outConn = reducedConn.Get(inConn);
-  }
-};
 }
 
 class MergePoints
 {
 public:
-  template <typename PointType, typename DeviceTag> class RunOnCellTypeFunctor
+  template <typename DeviceTag>
+  class RunOnCellTypeFunctor
   {
   public:
-    RunOnCellTypeFunctor(MergePoints* filter, const PointType& points,
-                         vtkm::cont::DataSet& output)
-      : Points(points), Output(output)
+    RunOnCellTypeFunctor(MergePoints* filter, const vtkm::cont::DataSet& input,
+      vtkm::cont::DataSet& output)
+      : Input(input)
+      , Output(output)
     {
     }
 
     template <typename CellSetType>
     void operator()(const CellSetType& cellSet) const
     {
-      return this->Filter->Run(cellSet, this->Points, this->Output,
-                               DeviceTag());
+      return this->Filter->Run(cellSet, this->Input, this->Output, DeviceTag());
     }
 
   private:
     MergePoints* Filter;
-    const PointType& Points;
+    const vtkm::cont::DataSet& Input;
     vtkm::cont::DataSet& Output;
   };
 
-  template <typename CellSetList, typename PointType, typename DeviceTag>
+  template <typename CellSetList, typename DeviceTag>
   void Run(const vtkm::cont::DynamicCellSetBase<CellSetList>& cellSet,
-           const PointType& points, vtkm::cont::DataSet& output, DeviceTag)
+    const vtkm::cont::DataSet& input, vtkm::cont::DataSet& output, DeviceTag)
   {
-    RunOnCellTypeFunctor<PointType, DeviceTag> run(this, points, output);
-    return cellSet.CastAndCall(run);
+    RunOnCellTypeFunctor<DeviceTag> run(this, input, output);
+    cellSet.CastAndCall(run);
   }
 
-  template <typename StorageTag, typename PointType, typename DeviceTag>
+  template <typename StorageTag, typename DeviceTag>
   void Run(const vtkm::cont::CellSetSingleType<StorageTag>& cellSet,
-           const PointType& points, vtkm::cont::DataSet& output, DeviceTag tag)
+    const vtkm::cont::DataSet& input, vtkm::cont::DataSet& output,
+    DeviceTag tag)
   {
     typedef vtkm::cont::DeviceAdapterAlgorithm<DeviceTag> Algorithms;
-    typedef vtkm::exec::ExecutionWholeArrayConst<
-        vtkm::Id, vtkm::cont::StorageTagBasic, DeviceTag>
-        ExecWholeArray;
     // Task is to merge exactly duplicate points. This is done
     // by doing the following:
     // 1. grab the topology info
     // 2. copy the topology
-    // 3. sort && unique the copy based on the points
-    // 4. run lower bounds to determine what index holds the 'merged' index
-    // 5. run a copy worklet to copy the 'merged' index value back into the
-    // connectivity
+    // 3. sort && unique the copy based on the points and add the reduced
+    //    points as the coordinate system to the output
+    // 4. run lower bounds to determine what index holds the 'merged' index,
+    //    which will build our new connectivity array
+    // 5. do a reduction on all the fields like we did for the topology
 
     // 1&&2
-    vtkm::cont::ArrayHandle<vtkm::Id> reducedConn;
+    vtkm::cont::ArrayHandle<vtkm::Id> mergedLookup;
     Algorithms::Copy(
-        cellSet.GetConnectivityArray(vtkm::TopologyElementTagPoint(),
-                                     vtkm::TopologyElementTagCell()),
-        reducedConn);
+      cellSet.GetConnectivityArray(
+        vtkm::TopologyElementTagPoint(), vtkm::TopologyElementTagCell()),
+      mergedLookup);
 
     // 3
     // The sort needs take the physical point locations into consideration
-    mergepoints::PointLess<DeviceTag> pointLess(
-        points.PrepareForInput(tag));
-    mergepoints::PointEqual<DeviceTag> pointEqual(
-        points.PrepareForInput(tag));
+    vtkm::cont::CoordinateSystem coordField = input.GetCoordinateSystem();
+    PyFRData::Vec3ArrayHandle points = make_Vec3Handle(coordField);
+    mergepoints::PointLess<DeviceTag> pointLess(points.PrepareForInput(tag));
+    mergepoints::PointEqual<DeviceTag> pointEqual(points.PrepareForInput(tag));
 
-    std::cout << "Merge Points info: \n ";
-    std::cout << "  connectivity length on input: " << reducedConn.GetNumberOfValues() << "\n ";
-    Algorithms::Sort(reducedConn, pointLess);
-    Algorithms::Unique(reducedConn, pointEqual);
-    std::cout << "  connectivity length after duplicate removed: " << reducedConn.GetNumberOfValues();
-    std::cout << std::endl;
+    // std::cout << "Merge Points info: \n ";
+    // std::cout << "  input number of points: " << points.GetNumberOfValues()
+    //           << "\n ";
+    Algorithms::Sort(mergedLookup, pointLess);
+    Algorithms::Unique(mergedLookup, pointEqual);
+    // std::cout << "  number of final points: "
+    //           << mergedLookup.GetNumberOfValues();
+    // std::cout << std::endl;
+
+    // Add the reduced points as the new coordinate system
+    vtkm::cont::ArrayHandle<vtkm::Vec<FPType, 3>> output_points;
+    Algorithms::Copy(
+      vtkm::cont::make_ArrayHandlePermutation(mergedLookup, points),
+      output_points);
+    output.AddCoordinateSystem(
+      vtkm::cont::CoordinateSystem("coordinates", 1, output_points));
 
     // 4
-    vtkm::cont::ArrayHandle<vtkm::Id> temp;
-    Algorithms::LowerBounds(reducedConn, cellSet.GetConnectivityArray(
-                                             vtkm::TopologyElementTagPoint(),
-                                             vtkm::TopologyElementTagCell()),
-                            temp);
-
-    // 5
-    // we need to pass temp, whole array reducedConn, and outputConnectivity
     vtkm::cont::ArrayHandle<vtkm::Id> outputConnectivity;
-
-    vtkm::worklet::DispatcherMapField<mergepoints::FillTopology, DeviceTag>
-        dispatcher;
-    dispatcher.Invoke(temp, outputConnectivity, ExecWholeArray(reducedConn));
+    Algorithms::LowerBounds(mergedLookup,
+      cellSet.GetConnectivityArray(
+        vtkm::TopologyElementTagPoint(), vtkm::TopologyElementTagCell()),
+      outputConnectivity, pointLess);
 
     vtkm::cont::CellSetSingleType<> outputCellSet(
-        vtkm::CellShapeTagHexahedron(), "cells");
+      vtkm::CellShapeTagHexahedron(), "cells");
     outputCellSet.Fill(outputConnectivity);
-
-    output.AddCoordinateSystem(vtkm::cont::CoordinateSystem("coordinates",
-                                                             1,points));
     output.AddCellSet(outputCellSet);
+
+    // 5
+    // now we need to do the same for the point fields
+    for (vtkm::IdComponent i = 0; i < input.GetNumberOfFields(); i++)
+    {
+      vtkm::cont::Field field = input.GetField(PyFRData::FieldName(i));
+      PyFRData::CatalystMappedDataArrayHandle inputHandle =
+        make_CatalystHandle(field);
+
+      vtkm::cont::ArrayHandle<FPType> outputHandle;
+      // we want to use the mergedLookup as a permutation to the copy
+      Algorithms::Copy(
+        vtkm::cont::make_ArrayHandlePermutation(mergedLookup, inputHandle),
+        outputHandle);
+
+      vtkm::cont::Field outputField(field.GetName(), field.GetOrder(),
+        field.GetAssociation(), outputHandle);
+      output.AddField(outputField);
+    }
   }
 };
 }

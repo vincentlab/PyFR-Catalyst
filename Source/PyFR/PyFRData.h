@@ -49,6 +49,7 @@ public:
   virtual ~PyFRData();
 
   typedef vtkm::cont::ArrayHandle<vtkm::Vec<FPType,3> > Vec3ArrayHandle;
+  typedef vtkm::cont::ArrayHandle<FPType> ScalarDataArrayHandle;
 
   typedef vtkm::cont::ArrayHandleImplicit<vtkm::Id, StridedDataFunctor>
   DataIndexArrayHandle;
@@ -56,7 +57,7 @@ public:
   typedef vtkm::cont::cuda::ArrayHandleCuda<FPType>::type RawDataArrayHandle;
 
   typedef vtkm::cont::ArrayHandlePermutation<DataIndexArrayHandle,
-    RawDataArrayHandle> ScalarDataArrayHandle;
+    RawDataArrayHandle> CatalystMappedDataArrayHandle;
 
   typedef vtkm::cont::CellSetSingleType<> CellSet;
 

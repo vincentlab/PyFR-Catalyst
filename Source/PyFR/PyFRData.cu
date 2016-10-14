@@ -119,23 +119,23 @@ void PyFRData::Init(void* data)
 
   DataIndexArrayHandle densityIndexArray(stridedDataFunctor[0],
                                    meshData->nCells*meshData->nVerticesPerCell);
-  ScalarDataArrayHandle densityArray(densityIndexArray, rawSolutionArray);
+  CatalystMappedDataArrayHandle densityArray(densityIndexArray, rawSolutionArray);
 
   DataIndexArrayHandle velocity_uIndexArray(stridedDataFunctor[1],
                                    meshData->nCells*meshData->nVerticesPerCell);
-  ScalarDataArrayHandle velocity_uArray(velocity_uIndexArray, rawSolutionArray);
+  CatalystMappedDataArrayHandle velocity_uArray(velocity_uIndexArray, rawSolutionArray);
 
   DataIndexArrayHandle velocity_vIndexArray(stridedDataFunctor[2],
                                    meshData->nCells*meshData->nVerticesPerCell);
-  ScalarDataArrayHandle velocity_vArray(velocity_vIndexArray, rawSolutionArray);
+  CatalystMappedDataArrayHandle velocity_vArray(velocity_vIndexArray, rawSolutionArray);
 
   DataIndexArrayHandle velocity_wIndexArray(stridedDataFunctor[3],
                                    meshData->nCells*meshData->nVerticesPerCell);
-  ScalarDataArrayHandle velocity_wArray(velocity_wIndexArray, rawSolutionArray);
+  CatalystMappedDataArrayHandle velocity_wArray(velocity_wIndexArray, rawSolutionArray);
 
   DataIndexArrayHandle pressureIndexArray(stridedDataFunctor[4],
                                    meshData->nCells*meshData->nVerticesPerCell);
-  ScalarDataArrayHandle pressureArray(pressureIndexArray, rawSolutionArray);
+  CatalystMappedDataArrayHandle pressureArray(pressureIndexArray, rawSolutionArray);
 
   enum ElemType { CONSTANT=0, LINEAR=1, QUADRATIC=2 };
   vtkm::cont::Field density("density",LINEAR,vtkm::cont::Field::ASSOC_POINTS,vtkm::cont::DynamicArrayHandle(densityArray));
