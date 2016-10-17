@@ -613,6 +613,10 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
       if(!std::isnan(vup[0]) && !std::isnan(vup[1]) && !std::isnan(vup[2])) {
         cam->SetViewUp(vup[0], vup[1], vup[2]);
       }
+      const float* bg = pyd->bg_color;
+      if(!std::isnan(bg[0]) && !std::isnan(bg[1]) && !std::isnan(!bg[2])) {
+        ren->SetBackground(bg[0], bg[1], bg[2]);
+      }
       root(
         if(this->PyData(dataDescription)->PrintMetadata()) {
           output_camera(cam);

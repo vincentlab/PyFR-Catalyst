@@ -90,6 +90,14 @@ CatalystCamera(void* p, const float eye[3], const float ref[3],
   std::copy(vup, vup+3, data->GetData()->vup);
 }
 
+/// Sets the background color for the render window.
+/// @param color 3-tuple of RGB color values, each in [0,1].
+extern "C" void
+CatalystBGColor(void* p, const float color[3]) {
+  vtkPyFRData* data = static_cast<vtkPyFRData*>(p);
+  std::copy(color, color+3, data->GetData()->bg_color);
+}
+
 //----------------------------------------------------------------------------
 void CatalystFinalize(void* p)
 {

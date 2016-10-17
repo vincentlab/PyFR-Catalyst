@@ -82,6 +82,7 @@ public:
   float eye[3];
   float ref[3];
   float vup[3];
+  float bg_color[3];
   ///@}
 
 private:
