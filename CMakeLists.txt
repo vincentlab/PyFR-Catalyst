@@ -16,9 +16,6 @@ if(APPLE)
 endif()
 
 find_package(ParaView 4.4 REQUIRED COMPONENTS vtkPVCatalyst vtkPVVTKExtensionsDefault vtkPVClientServerCoreCore)
-if(NOT PARAVIEW_USE_MPI)
-  message(SEND_ERROR "ParaView must be built with MPI enabled")
-endif()
 include("${PARAVIEW_USE_FILE}")
 include(ParaViewPlugins)
 
@@ -35,6 +32,10 @@ if(${CLIENT_OR_SERVER} STREQUAL Server)
 endif()
 
 if (BuildServerLibs)
+  if(NOT PARAVIEW_USE_MPI)
+    message(SEND_ERROR "ParaView must be built with MPI enabled")
+  endif()
+
   find_package(MPI REQUIRED)
   include_directories(${MPI_INCLUDE_PATH})
 
