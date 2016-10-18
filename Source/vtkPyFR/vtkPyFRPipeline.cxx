@@ -46,6 +46,7 @@
 #include <vtkTextProperty.h>
 #include <vtkTextWidget.h>
 #include <vtkTextRepresentation.h>
+#include <vtkVector.h>
 #include <vtkXMLUnstructuredGridReader.h>
 
 #include "vtkPyFRData.h"
@@ -480,11 +481,25 @@ output_camera(/*const*/ vtkCamera* cam) {
          vup[0],vup[1],vup[2]);
 }
 
+void vtkPyFRPipeline::SetResolution(uint32_t width, uint32_t height)
+{
+  vtkSMSessionProxyManager* sessionProxyManager =
+    vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
+  vtkNew<vtkCollection> views;
+  sessionProxyManager->GetProxies("views",views.GetPointer());
+  const size_t nviews = views->GetNumberOfItems();
+  for (int i=0; i < nviews; i++)
+    {
+    vtkSMViewProxy* viewProxy =
+      vtkSMViewProxy::SafeDownCast(views->GetItemAsObject(i));
+    vtkVector2i isz(width, height);
+    vtkSMPropertyHelper(viewProxy, "ViewSize").Set(isz.GetData(), 2);
+    }
+}
+
 //----------------------------------------------------------------------------
 int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
 {
-  std::cout << "vtkPyFRPipeline::CoProcess" << std::endl;
-
   vtkSMSessionProxyManager* sessionProxyManager =
     vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
 
@@ -612,6 +627,10 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
       const float* vup = pyd->vup;
       if(!std::isnan(vup[0]) && !std::isnan(vup[1]) && !std::isnan(vup[2])) {
         cam->SetViewUp(vup[0], vup[1], vup[2]);
+      }
+      const float* bg = pyd->bg_color;
+      if(!std::isnan(bg[0]) && !std::isnan(bg[1]) && !std::isnan(!bg[2])) {
+        ren->SetBackground(bg[0], bg[1], bg[2]);
       }
       root(
         if(this->PyData(dataDescription)->PrintMetadata()) {

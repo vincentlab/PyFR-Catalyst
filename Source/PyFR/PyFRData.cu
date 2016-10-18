@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include <iterator>
 #include <limits>
@@ -47,7 +48,8 @@ bool PyFRData::PopulateMaps()
 //------------------------------------------------------------------------------
 PyFRData::PyFRData() : catalystData(NULL)
 {
-
+  this->bg_color[0] = this->bg_color[1] = this->bg_color[2] = NAN;
+  this->image_size[0] = this->image_size[1] = 400u;
 }
 
 //------------------------------------------------------------------------------

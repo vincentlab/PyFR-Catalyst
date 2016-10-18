@@ -1,9 +1,10 @@
 #ifndef VTKPYFRPIPELINE_H
 #define VTKPYFRPIPELINE_H
 
+#include <cinttypes>
+#include <string>
 #include <vtkCPPipeline.h>
 #include <vtkSmartPointer.h>
-#include <string>
 
 class PyFRData;
 class vtkCPDataDescription;
@@ -27,6 +28,7 @@ public:
 
   virtual int RequestDataDescription(vtkCPDataDescription* dataDescription);
 
+  virtual void SetResolution(uint32_t w, uint32_t h);
   virtual int CoProcess(vtkCPDataDescription* dataDescription);
 
   vtkSmartPointer<vtkSMSourceProxy> GetContour() { return this->Contour; }
