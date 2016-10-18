@@ -98,6 +98,18 @@ CatalystBGColor(void* p, const float color[3]) {
   std::copy(color, color+3, data->GetData()->bg_color);
 }
 
+extern "C" void
+CatalystImageResolution(void*, const uint32_t imgsz[2]) {
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: Catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  pipeline->SetResolution(imgsz[0], imgsz[1]);
+}
+
 //----------------------------------------------------------------------------
 void CatalystFinalize(void* p)
 {
