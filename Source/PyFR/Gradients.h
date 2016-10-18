@@ -68,7 +68,7 @@ struct ComputeGradients : public vtkm::worklet::WorkletMapCellToPoint
   typedef vtkm::Vec<FPType,8> GradientField;
   typedef vtkm::Vec< vtkm::Vec<FPType,3>,8> VecField;
 
-  ComputeGradients(vtkm::cont::CellSetSingleType<StorageTag> cellset,
+  ComputeGradients(vtkm::cont::CellSetSingleType<StorageTag>& cellset,
                    PyFRData::Vec3ArrayHandle coords,
                    PyFRData::ScalarDataArrayHandle density,
                    PyFRData::ScalarDataArrayHandle pressure,
@@ -378,8 +378,11 @@ public:
     return cellSet.CastAndCall(run);
   }
 
+  //we need to create a copy of the cellset here!
+  //this is needed as we are going to possible recompute the
+  //member variable NumberOfPoints
   template <typename StorageTag, typename DeviceTag>
-  void Run(const vtkm::cont::CellSetSingleType<StorageTag>& cellSet,
+  void Run(vtkm::cont::CellSetSingleType<StorageTag> cellSet,
            const vtkm::cont::DataSet& input,
            vtkm::cont::ArrayHandle<FPType>& densityGradientMag,
            vtkm::cont::ArrayHandle<FPType>& pressureGradientMag,

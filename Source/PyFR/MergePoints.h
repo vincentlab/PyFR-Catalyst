@@ -205,7 +205,9 @@ public:
       outputConnectivity, pointLess);
 
     vtkm::cont::CellSetSingleType<> outputCellSet(
-      vtkm::CellShapeTagHexahedron(), "cells");
+      vtkm::CellShapeTagHexahedron(),
+      output_points.GetNumberOfValues(),
+      "cells");
     outputCellSet.Fill(outputConnectivity);
     output.AddCellSet(outputCellSet);
 

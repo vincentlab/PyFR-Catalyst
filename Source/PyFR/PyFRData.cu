@@ -101,7 +101,9 @@ void PyFRData::Init(void* data)
       Copy(cast, connectivity);
     }
 
-  vtkm::cont::CellSetSingleType<> cset(vtkm::CellShapeTagHexahedron(), "cells");
+  vtkm::cont::CellSetSingleType<> cset(vtkm::CellShapeTagHexahedron(),
+                                       meshData->nCells*meshData->nVerticesPerCell,
+                                       "cells");
   cset.Fill(connectivity);
 
   StridedDataFunctor stridedDataFunctor[5];
