@@ -87,6 +87,7 @@ int vtkPyFRContourFilter::RequestData(
     {
     filter.AddContourValue(this->ContourValues[i]);
     }
+
   filter.SetContourField(this->ContourField);
   filter(input->GetData(),output->GetData());
 
@@ -98,7 +99,11 @@ int vtkPyFRContourFilter::RequestData(
 
   filter.MapFieldOntoIsosurfaces(this->MappedField,input->GetData(),
                                  output->GetData());
-  this->minmax = filter.Range();
+
+  std::pair<float,float> crange = filter.ColorRange();
+  std::cout << "Contour color range is: " << ColorRange[0] << " to " << ColorRange[1] << std::endl;
+
+  this->minmax = filter.DataRange();
   output->Modified();
   return 1;
 }
