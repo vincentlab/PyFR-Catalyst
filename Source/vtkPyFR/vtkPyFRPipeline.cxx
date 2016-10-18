@@ -317,7 +317,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   vtkSMPropertyHelper(this->Contour, "Input").Set(gradients, 0);
 #endif
   vtkSMPropertyHelper(this->Contour,"ContourField").Set(0);
-  vtkSMPropertyHelper(this->Contour,"ColorField").Set(0);
+  vtkSMPropertyHelper(this->Contour,"ColorField").Set(8);
 
   // Set up the isovalues to use.
   const PyFRData* dta = pyfrData->GetData();
