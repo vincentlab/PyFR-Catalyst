@@ -114,6 +114,19 @@ void CatalystImageResolution(void*, const uint32_t imgsz[2])
 }
 
 //----------------------------------------------------------------------------
+void CatalystSpecularLighting(void*, float coefficient, float power)
+{
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: Catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  pipeline->SetSpecularLighting(coefficient, power);
+}
+
+//----------------------------------------------------------------------------
 void CatalystFinalize(void* p)
 {
   vtkPyFRData* data = static_cast<vtkPyFRData*>(p);

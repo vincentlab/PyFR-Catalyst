@@ -506,6 +506,34 @@ void vtkPyFRPipeline::SetResolution(uint32_t width, uint32_t height)
 }
 
 //----------------------------------------------------------------------------
+void vtkPyFRPipeline::SetSpecularLighting(float coefficient, float power)
+{
+  vtkSMSessionProxyManager* sessionProxyManager =
+    vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
+  vtkNew<vtkCollection> views;
+  sessionProxyManager->GetProxies("views",views.GetPointer());
+  const size_t nviews = views->GetNumberOfItems();
+  for (int i=0; i < nviews; i++)
+    {
+    vtkSMViewProxy* viewProxy =
+      vtkSMViewProxy::SafeDownCast(views->GetItemAsObject(i));
+    vtkSMRenderViewProxy* rview = vtkSMRenderViewProxy::SafeDownCast(viewProxy);
+    vtkRenderer* ren = rview->GetRenderer();
+
+    vtkActorCollection* actors = ren->GetActors();
+    vtkCollectionSimpleIterator ait;
+    actors->InitTraversal(ait);
+
+    vtkActor *actor;
+    while ( (actor = actors->GetNextActor(ait)) )
+      {
+      actor->GetProperty()->SetSpecular(coefficient);
+      actor->GetProperty()->SetSpecularPower(power);
+      }
+    }
+}
+
+//----------------------------------------------------------------------------
 int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
 {
   vtkSMSessionProxyManager* sessionProxyManager =

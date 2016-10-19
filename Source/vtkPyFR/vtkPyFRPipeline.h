@@ -29,6 +29,7 @@ public:
   virtual int RequestDataDescription(vtkCPDataDescription* dataDescription);
 
   virtual void SetResolution(uint32_t w, uint32_t h);
+  virtual void SetSpecularLighting(float coefficient, float power);
   virtual int CoProcess(vtkCPDataDescription* dataDescription);
 
   vtkSmartPointer<vtkSMSourceProxy> GetContour() { return this->Contour; }
