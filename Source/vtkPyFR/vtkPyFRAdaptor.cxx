@@ -81,9 +81,10 @@ void* CatalystInitialize(char* hostName, int pyport, char* outputfile, void* p)
   return data;
 }
 
-extern "C" void
-CatalystCamera(void* p, const float eye[3], const float ref[3],
-               const float vup[3]) {
+//----------------------------------------------------------------------------
+void CatalystCamera(void* p, const float eye[3], const float ref[3],
+               const float vup[3])
+{
   vtkPyFRData* data = static_cast<vtkPyFRData*>(p);
   std::copy(eye, eye+3, data->GetData()->eye);
   std::copy(ref, ref+3, data->GetData()->ref);
@@ -92,14 +93,16 @@ CatalystCamera(void* p, const float eye[3], const float ref[3],
 
 /// Sets the background color for the render window.
 /// @param color 3-tuple of RGB color values, each in [0,1].
-extern "C" void
-CatalystBGColor(void* p, const float color[3]) {
+//----------------------------------------------------------------------------
+void CatalystBGColor(void* p, const float color[3])
+{
   vtkPyFRData* data = static_cast<vtkPyFRData*>(p);
   std::copy(color, color+3, data->GetData()->bg_color);
 }
 
-extern "C" void
-CatalystImageResolution(void*, const uint32_t imgsz[2]) {
+//----------------------------------------------------------------------------
+void CatalystImageResolution(void*, const uint32_t imgsz[2])
+{
   if(Processor == NULL)
     {
     fprintf(stderr, "%s: Catalyst not initialized!\n", __FUNCTION__);
