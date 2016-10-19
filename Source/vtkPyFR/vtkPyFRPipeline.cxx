@@ -96,6 +96,19 @@ reduce(T* v, size_t n, vtkCommunicator::StandardOperations op) {
     comm->Reduce(v, NULL, n, op, dest);
   }
 }
+
+
+static void
+output_camera(/*const*/ vtkCamera* cam) {
+  double eye[3] = {0.0};
+  double ref[3] = {0.0};
+  double vup[3] = {0.0};
+  cam->GetPosition(eye);
+  cam->GetFocalPoint(ref);
+  cam->GetViewUp(vup);
+  printf("eye={%lg %lg %lg} ref={%lf %lf %lf} vup={%lf %lf %lf}\n",
+         eye[0],eye[1],eye[2], ref[0],ref[1],ref[2],
+         vup[0],vup[1],vup[2]);
 }
 
 template <class Mapper>
@@ -125,6 +138,9 @@ void vtkUpdateFilter(vtkSMSourceProxy* filter, double time)
 {
   std::cout << "filter: " << filter->GetClassName() << " update to time: " << time << std::endl;
   filter->UpdatePipeline(time);
+}
+
+
 }
 
 vtkStandardNewMacro(vtkPyFRPipeline);
@@ -472,19 +488,7 @@ int vtkPyFRPipeline::RequestDataDescription(
   return 1;
 }
 
-static void
-output_camera(/*const*/ vtkCamera* cam) {
-  double eye[3] = {0.0};
-  double ref[3] = {0.0};
-  double vup[3] = {0.0};
-  cam->GetPosition(eye);
-  cam->GetFocalPoint(ref);
-  cam->GetViewUp(vup);
-  printf("eye={%lg %lg %lg} ref={%lf %lf %lf} vup={%lf %lf %lf}\n",
-         eye[0],eye[1],eye[2], ref[0],ref[1],ref[2],
-         vup[0],vup[1],vup[2]);
-}
-
+//----------------------------------------------------------------------------
 void vtkPyFRPipeline::SetResolution(uint32_t width, uint32_t height)
 {
   vtkSMSessionProxyManager* sessionProxyManager =
