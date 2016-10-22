@@ -16,7 +16,7 @@ extern "C"
 
   void CatalystBGColor(void* p, const float color[3]);
 
-  void CatalystImageResolution(void* p, const float color[3]);
+  void CatalystImageResolution(void* p, const uint32_t imgsz[2]);
 
   //By default all items use a coefficient of 0.5 and a power of 25
   //coefficient of 0 turns of specular highlights
