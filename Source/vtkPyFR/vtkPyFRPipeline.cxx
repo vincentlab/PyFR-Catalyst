@@ -696,13 +696,13 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
 
       const int magnification = 1;
       const int quality = 100;
-      char fname[32] = {0};
+      char fname[128] = {0};
       if(nviews > 1)
         {
-        snprintf(fname, 32, "ts%04ld-v%d.png",
+        snprintf(fname, 128, "%s%04ld-v%d.png", pyd->fnprefix.c_str(),
                  (long)dataDescription->GetTimeStep(), i);
         } else {
-        snprintf(fname, 32, "ts%04ld.png",
+        snprintf(fname, 128, "%s%04ld.png", pyd->fnprefix.c_str(),
                  (long)dataDescription->GetTimeStep());
         }
       this->controller->WriteImage(viewProxy, fname, magnification, quality);
