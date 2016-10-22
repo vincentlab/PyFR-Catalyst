@@ -23,6 +23,7 @@ extern "C"
   //power is 0 - 100
   void CatalystSpecularLighting(void* p, float coefficient, float power);
 
+  void CatalystFilenamePrefix(void* p, const char* pfix);
   void CatalystSetColorTable(void*, const uint8_t* rgba, const float* loc,
                              size_t n);
   void CatalystSetColorRange(void*, double low, double high);

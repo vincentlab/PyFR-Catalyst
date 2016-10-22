@@ -126,6 +126,12 @@ void CatalystSpecularLighting(void*, float coefficient, float power)
   pipeline->SetSpecularLighting(coefficient, power);
 }
 
+void
+CatalystFilenamePrefix(void* p, const char* pfix) {
+  vtkPyFRData* data = static_cast<vtkPyFRData*>(p);
+  data->GetData()->fnprefix = std::string(pfix);
+}
+
 //----------------------------------------------------------------------------
 void CatalystSetColorTable(void*, const uint8_t* rgba, const float* loc,
                            size_t n) {
