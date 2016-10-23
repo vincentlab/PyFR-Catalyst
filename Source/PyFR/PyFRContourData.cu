@@ -24,9 +24,11 @@ class PyFRContourData::ContourDataImpl
 public:
   ContourDataImpl()
   {
-    this->Table = make_ColorTable(ColorTable::BLACKBODY, 0.0, 1.0);
+    TablePreset = ColorTable::BLUETOREDRAINBOW;
+    this->Table = make_ColorTable(TablePreset, 0.0, 1.0);
   }
 
+  ColorTable::Preset TablePreset;
   RuntimeColorTable Table;
   std::vector<PyFRContour> Contours;
 };
@@ -40,6 +42,7 @@ PyFRContourData::PyFRContourData()
 //----------------------------------------------------------------------------
 PyFRContourData::~PyFRContourData()
 {
+  this->Impl->Table.ReleaseResources();
   delete this->Impl;
 }
 
@@ -131,12 +134,31 @@ void PyFRContourData::ComputeBounds(FPType* bounds) const
 //----------------------------------------------------------------------------
 void PyFRContourData::SetColorPalette(int preset, FPType min, FPType max)
 {
+  std::cout << "SetColorPalette: " << preset << std::endl;
   this->Impl->Table = make_ColorTable(static_cast<ColorTable::Preset>(preset), min, max);
+  this->Impl->TablePreset = static_cast<ColorTable::Preset>(preset);
 
   for (unsigned i=0;i<this->GetNumberOfContours();i++)
     {
     this->Impl->Contours[i].ChangeColorTable(this->Impl->Table);
     }
+}
+
+
+//----------------------------------------------------------------------------
+void PyFRContourData::SetColorPreset(int preset)
+{
+  this->SetColorPalette(static_cast<ColorTable::Preset>(preset),
+                        this->Impl->Table.Min,
+                        this->Impl->Table.Max);
+}
+
+//----------------------------------------------------------------------------
+void PyFRContourData::SetColorRange(FPType min,FPType max)
+{
+  this->SetColorPalette(this->Impl->TablePreset,
+                        min,
+                        max);
 }
 
 namespace transfer

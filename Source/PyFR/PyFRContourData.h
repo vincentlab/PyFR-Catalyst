@@ -22,6 +22,9 @@ public:
   void ComputeBounds(FPType*) const;
   void SetColorPalette(int,FPType,FPType);
 
+  void SetColorPreset(int);
+  void SetColorRange(FPType,FPType);
+
 private:
   class ContourDataImpl;
   ContourDataImpl* Impl;

@@ -41,7 +41,7 @@ public:
     BLUETOREDRAINBOW,
     GRAYSCALE,
     GREENWHITELINEAR,
-    RUNTIME
+    RUNTIME = -1
   };
 };
 
@@ -53,12 +53,16 @@ public:
   FPType Max;
   vtkm::IdComponent NumberOfColors;
 
-
-  vtkm::exec::cuda::internal::ConstArrayPortalFromThrust<const Color> Palette;
-  vtkm::exec::cuda::internal::ConstArrayPortalFromThrust<const float> Pivots;
+  Color* Palette;
+  float* Pivots;
 
   VTKM_EXEC_CONT_EXPORT
-  RuntimeColorTable(): Min(0.0), Max(1.0), NumberOfColors(0), Palette(), Pivots()
+  RuntimeColorTable()
+    : Min(0.0)
+    , Max(1.0)
+    , NumberOfColors(0)
+    , Palette(NULL)
+    , Pivots(NULL)
   {
   }
 
@@ -67,30 +71,32 @@ public:
                     const std::vector<Color>& palette,
                     const std::vector<float>& pivots);
 
+  void ReleaseResources();
+
   VTKM_EXEC_CONT_EXPORT
   Color operator()(const FPType& value) const
   {
-    if (value < this->Pivots.Get(0))
+    if (value < this->Pivots[0])
       {
-       return this->Palette.Get(0);
+       return this->Palette[0];
       }
 
     vtkm::IdComponent index = 1;
-    while (index < this->NumberOfColors && this->Pivots.Get(index) < value)
+    while (index < this->NumberOfColors && this->Pivots[index] < value)
       {
       index++;
       }
 
     if (index == this->NumberOfColors)
       {
-      return this->Palette.Get(index-1);
+      return this->Palette[index-1];
       }
 
     // TODO: cache the denominator
-    float weight = ((value - this->Pivots.Get(index-1))/
-                    (this->Pivots.Get(index) - this->Pivots.Get(index-1)));
+    float weight = ((value - this->Pivots[index-1])/
+                    (this->Pivots[index] - this->Pivots[index-1]));
 
-    return Lerp(this->Palette.Get(index-1),this->Palette.Get(index),weight);
+    return Lerp(this->Palette[index-1],this->Palette[index],weight);
   }
 
   VTKM_EXEC_CONT_EXPORT
@@ -103,10 +109,10 @@ public:
       {
       if (this->ColorIsInInterval(color,index,weight))
         {
-        return (1.-weight)*this->Pivots.Get(index) + weight*this->Pivots.Get(index+1);
+        return (1.-weight)*this->Pivots[index] + weight*this->Pivots[index+1];
         }
       }
-    return this->Pivots.Get(this->NumberOfColors-1);
+    return this->Pivots[this->NumberOfColors-1];
   }
 
 protected:
@@ -115,15 +121,15 @@ protected:
                          vtkm::IdComponent interval,
                          float& weight) const
   {
-    if (color == this->Palette.Get(interval))
+    if (color == this->Palette[interval])
       {
       weight = 0.;
       return true;
       }
 
     typedef vtkm::Vec<float,4> SignedColor;
-    SignedColor c0(this->Palette.Get(interval));
-    SignedColor c1(this->Palette.Get(interval+1));
+    SignedColor c0(this->Palette[interval]);
+    SignedColor c1(this->Palette[interval+1]);
     SignedColor c(color);
 
     SignedColor c0_to_c(vtkm::Normal(c - c0));
@@ -150,12 +156,14 @@ static
 RuntimeColorTable make_ColorTable(ColorTable::Preset i,
                                   FPType min, FPType max)
 {
-  std::vector<Color> palette;
-  std::vector<float> pivots;
+  static std::vector<Color> palette;
+  static std::vector<float> pivots;
   vtkm::Id numColors = 0;
 
   switch(i)
   {
+    //1. ColorTable need to normalize the pivots after construction
+    //based on the min & max
   case ColorTable::RUNTIME:
     //
     //Here be where we hack
@@ -199,7 +207,7 @@ RuntimeColorTable make_ColorTable(ColorTable::Preset i,
     break;
   }
 
-  return RuntimeColorTable(min,max, palette, pivots);
+  return RuntimeColorTable(min, max, palette, pivots);
 }
 
 #endif
