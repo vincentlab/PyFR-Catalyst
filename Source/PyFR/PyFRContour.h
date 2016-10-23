@@ -17,10 +17,10 @@ public:
   typedef vtkm::cont::ArrayHandleExposed<Color> ColorArrayHandle;
   typedef vtkm::cont::ArrayHandleTransform<FPType,
                                            ColorArrayHandle,
-                                           ColorTable,
-                                           ColorTable> ScalarDataArrayHandle;
+                                           RuntimeColorTable,
+                                           RuntimeColorTable> ScalarDataArrayHandle;
 
-  PyFRContour(const ColorTable& table) : Vertices(),
+  PyFRContour(const RuntimeColorTable& table) : Vertices(),
                                          Normals(),
                                          ColorData(),
                                          ScalarData(this->ColorData,
@@ -38,9 +38,11 @@ public:
   ColorArrayHandle GetColorData()       const { return this->ColorData; }
   int GetScalarDataType()               const { return this->ScalarDataType; }
 
-  void ChangeColorTable(const ColorTable& table)
+  void ChangeColorTable(const RuntimeColorTable& table)
   {
-    this->ScalarData = ScalarDataArrayHandle(this->ColorData,table,table);
+    this->ScalarData = ScalarDataArrayHandle(this->ColorData,
+                                             table,
+                                             table);
   }
 
   void SetScalarDataType(int i) { this->ScalarDataType = i; }

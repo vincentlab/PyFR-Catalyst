@@ -6,6 +6,7 @@
 #include "CrinkleClip.h"
 #include "IsosurfaceHexahedra.h"
 #include "PyFRData.h"
+#include "PyFRContour.h"
 #include "PyFRContourData.h"
 
 //----------------------------------------------------------------------------
