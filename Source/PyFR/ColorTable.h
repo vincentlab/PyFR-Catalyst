@@ -31,7 +31,8 @@ Color Lerp(const Color& color0,
 class ColorTable
 {
   public:
-  enum { MaxSize = 5 };
+  enum { MaxNumberOfPresets = 5 };
+  enum { MaxNumberOfTableEntries = 5 };
 
   enum Preset
   {
@@ -45,7 +46,7 @@ class ColorTable
   VTKM_EXEC_CONT_EXPORT
   ColorTable()
   {
-    this->NumberOfColors = MaxSize;
+    this->NumberOfColors = MaxNumberOfPresets;
     PresetColorTable(BLUETOREDRAINBOW);
     this->Min = 0.;
     this->Max = 1.;
@@ -57,7 +58,7 @@ class ColorTable
     this->Min = other.Min;
     this->Max = other.Max;
     this->NumberOfColors = other.NumberOfColors;
-    for (unsigned i=0;i<MaxSize;i++)
+    for (unsigned i=0;i<MaxNumberOfTableEntries;i++)
       {
       this->Palette[i] = other.Palette[i];
       this->Pivots[i] = other.Pivots[i];
@@ -72,7 +73,7 @@ class ColorTable
       this->Min = other.Min;
       this->Max = other.Max;
       this->NumberOfColors = other.NumberOfColors;
-      for (unsigned i=0;i<MaxSize;i++)
+      for (unsigned i=0;i<MaxNumberOfTableEntries;i++)
         {
         this->Palette[i] = other.Palette[i];
         this->Pivots[i] = other.Pivots[i];
@@ -139,7 +140,7 @@ class ColorTable
   VTKM_EXEC_CONT_EXPORT
   void SetNumberOfColors(vtkm::IdComponent nColors)
   {
-    assert(nColors<=MaxSize);
+    assert(nColors<=MaxNumberOfPresets);
     this->NumberOfColors = nColors;
   }
 
@@ -148,7 +149,7 @@ class ColorTable
                        const Color& color,
                        float normalizedPivot)
   {
-    assert(i<MaxSize);
+    assert(i<MaxNumberOfTableEntries);
     this->Palette[i] = color;
     this->Pivots[i] = this->Min + normalizedPivot*(this->Max - this->Min);
   }
@@ -234,8 +235,9 @@ VTKM_EXEC_CONT_EXPORT
   FPType Min;
   FPType Max;
   vtkm::IdComponent NumberOfColors;
-  vtkm::Vec<Color,MaxSize> Palette;
-  vtkm::Vec<float,MaxSize> Pivots;
+
+  vtkm::Vec<Color,MaxNumberOfTableEntries> Palette;
+  vtkm::Vec<float,MaxNumberOfTableEntries> Pivots;
 };
 
 #endif
