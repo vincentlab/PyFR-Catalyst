@@ -127,6 +127,32 @@ void CatalystSpecularLighting(void*, float coefficient, float power)
 }
 
 //----------------------------------------------------------------------------
+void CatalystSetColorTable(void*, const uint8_t* rgba, const float* loc,
+                           size_t n) {
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  pipeline->SetColorTable(rgba, loc, n);
+}
+
+//----------------------------------------------------------------------------
+void CatalystSetColorRange(void*, double low, double high)
+{
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  pipeline->SetColorRange(low, high);
+}
+
+//----------------------------------------------------------------------------
 void CatalystFinalize(void* p)
 {
   vtkPyFRData* data = static_cast<vtkPyFRData*>(p);

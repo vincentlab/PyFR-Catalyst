@@ -4,8 +4,9 @@
 #define BOOST_SP_DISABLE_THREADS
 
 #include <cassert>
+#include <cfloat>
 #include <vector>
-#include <stdio.h>
+#include <cstdio>
 
 #include <vtkm/Types.h>
 #include <vtkm/VecVariable.h>
@@ -208,6 +209,18 @@ RuntimeColorTable make_ColorTable(ColorTable::Preset i,
   }
 
   return RuntimeColorTable(min, max, palette, pivots);
+}
+
+static
+RuntimeColorTable make_CustomColorTable(const uint8_t* rgba, const float* loc,
+                                        size_t n, FPType cmin, FPType cmax) {
+  std::vector<Color> palette(n);
+  std::vector<float> pivots(n);
+  for(size_t i=0; i < n; ++i) {
+    palette[i] = Color(rgba[i*4+0], rgba[i*4+1], rgba[i*4+2], rgba[i*4+3]);
+    pivots[i] = loc[i];
+  }
+  return RuntimeColorTable(cmin, cmax, palette, pivots);
 }
 
 #endif

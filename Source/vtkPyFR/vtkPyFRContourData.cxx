@@ -155,5 +155,27 @@ void vtkPyFRContourData::SetColorPalette(int i,double* range)
     }
 }
 
+void vtkPyFRContourData::SetColorPreset(int i)
+{
+  this->ColorPalette = i;
+  this->data->SetColorPreset(i);
+}
+
+void vtkPyFRContourData::SetColorRange(FPType low, FPType high)
+{
+  this->ColorRange[0] = low;
+  this->ColorRange[1] = high;
+  this->data->SetColorRange(low, high);
+  this->Modified();
+}
+
+void vtkPyFRContourData::SetCustomColorPalette(const uint8_t* rgba,
+                                               const float* loc, size_t n)
+{
+  this->data->SetNumberOfContours(n);
+  this->data->SetCustomColorTable(rgba, loc, n);
+  this->Modified();
+}
+
 //----------------------------------------------------------------------------
 vtkObject* New_vtkPyFRContourData() { return vtkPyFRContourData::New(); }
