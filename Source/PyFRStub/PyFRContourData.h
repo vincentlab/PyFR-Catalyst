@@ -3,11 +3,16 @@
 
 struct PyFRContourData
 {
+  void SetNumberOfContours(unsigned){};
   unsigned GetNumberOfContours() const { return 0; }
   unsigned GetContourSize(int) const { return 0; }
   void ComputeContourBounds(int,FPType*) const {}
   void ComputeBounds(FPType*) const {}
   void SetColorPalette(int,FPType,FPType) {}
+
+  void SetColorPreset(int) {}
+  void SetColorRange(FPType,FPType) {}
+  void SetCustomColorTable(const uint8_t*, const float*, size_t) {}
 };
 
 namespace transfer
