@@ -22,6 +22,10 @@ extern "C"
   //coefficient of 0 turns of specular highlights
   //power is 0 - 100
   void CatalystSpecularLighting(void* p, float coefficient, float power);
+
+  void CatalystSetColorTable(void*, const uint8_t* rgba, const float* loc,
+                             size_t n);
+  void CatalystSetColorRange(void*, double low, double high);
 #ifdef __cplusplus
 }
 #endif

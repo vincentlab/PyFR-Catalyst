@@ -1,6 +1,9 @@
 #include <algorithm>
+#include <stdexcept>
 #include "PyFRContourData.h"
 
+#include "PyFRContour.h"
+#include "ColorTable.h"
 #include "Bounds.h"
 
 #include <vtkm/Math.h>
@@ -16,6 +19,46 @@
 #include <vtkm/opengl/TransferToOpenGL.h>
 #include <vtkm/opengl/cuda/internal/TransferToOpenGL.h>
 
+
+class PyFRContourData::ContourDataImpl
+{
+public:
+  ContourDataImpl()
+  {
+    TablePreset = ColorTable::BLUETOREDRAINBOW;
+    this->Table = make_ColorTable(TablePreset, 0.0, 1.0);
+  }
+
+  ColorTable::Preset TablePreset;
+  RuntimeColorTable Table;
+  std::vector<PyFRContour> Contours;
+};
+
+//----------------------------------------------------------------------------
+PyFRContourData::PyFRContourData()
+{
+  this->Impl = new ContourDataImpl;
+  this->crange[0] = FLT_MAX;
+  this->crange[1] = FLT_MIN;
+}
+
+//----------------------------------------------------------------------------
+PyFRContourData::~PyFRContourData()
+{
+  this->Impl->Table.ReleaseResources();
+  delete this->Impl;
+}
+
+//----------------------------------------------------------------------------
+unsigned PyFRContourData::GetNumberOfContours() const
+{ return this->Impl->Contours.size(); }
+//----------------------------------------------------------------------------
+PyFRContour& PyFRContourData::GetContour(int i)
+{ return this->Impl->Contours[i]; }
+//----------------------------------------------------------------------------
+const PyFRContour& PyFRContourData::GetContour(int i) const
+{ return this->Impl->Contours[i]; }
+
 //----------------------------------------------------------------------------
 void PyFRContourData::SetNumberOfContours(unsigned nContours)
 {
@@ -24,21 +67,21 @@ void PyFRContourData::SetNumberOfContours(unsigned nContours)
   // smart pointers to the same array instance. A specialization of
   // std::allocator<> for array handles should be created.
 
-  for (unsigned i=this->Contours.size();i<nContours;i++)
+  for (unsigned i=this->Impl->Contours.size();i<nContours;i++)
     {
-    this->Contours.push_back(PyFRContour(this->Table));
+    this->Impl->Contours.push_back(PyFRContour(this->Impl->Table));
     }
-  unsigned contourSize = this->Contours.size();
+  unsigned contourSize = this->Impl->Contours.size();
   for (unsigned i=nContours;i<contourSize;i++)
     {
-    this->Contours.pop_back();
+    this->Impl->Contours.pop_back();
     }
 }
 
 //----------------------------------------------------------------------------
 unsigned PyFRContourData::GetContourSize(int contour) const
 {
-  if(contour < this->Contours.size())
+  if(contour < this->Impl->Contours.size())
     return this->GetContour(contour).GetVertices().GetNumberOfValues();
   return 0;
 }
@@ -92,13 +135,51 @@ void PyFRContourData::ComputeBounds(FPType* bounds) const
 }
 
 //----------------------------------------------------------------------------
-void PyFRContourData::SetColorPalette(int preset,FPType min,FPType max)
+void PyFRContourData::SetColorPalette(int preset, FPType min, FPType max)
 {
-  this->Table.SetRange(min,max);
-  this->Table.PresetColorTable(static_cast<ColorTable::Preset>(preset));
+  std::cout << "SetColorPalette: " << preset << std::endl;
+  this->Impl->Table = make_ColorTable(static_cast<ColorTable::Preset>(preset), min, max);
+  this->Impl->TablePreset = static_cast<ColorTable::Preset>(preset);
+
   for (unsigned i=0;i<this->GetNumberOfContours();i++)
     {
-    this->Contours[i].ChangeColorTable(this->Table);
+    this->Impl->Contours[i].ChangeColorTable(this->Impl->Table);
+    }
+}
+
+
+//----------------------------------------------------------------------------
+void PyFRContourData::SetColorPreset(int preset)
+{
+  this->SetColorPalette(static_cast<ColorTable::Preset>(preset),
+                        this->Impl->Table.Min,
+                        this->Impl->Table.Max);
+}
+
+//----------------------------------------------------------------------------
+void PyFRContourData::SetColorRange(FPType min,FPType max)
+{
+  this->SetColorPalette(this->Impl->TablePreset,
+                        min,
+                        max);
+  this->crange[0] = min;
+  this->crange[1] = max;
+}
+
+void PyFRContourData::SetCustomColorTable(const uint8_t* rgba, const float* loc,
+                                          size_t n)
+{
+	if(this->crange[0] == FLT_MAX || this->crange[1] == FLT_MIN)
+    {
+      throw std::runtime_error("SetColorRange not yet called!  You need to set"
+                               " the color range before you can setup a custom"
+                               " color table.");
+    }
+  this->Impl->Table = make_CustomColorTable(rgba, loc, n, this->crange[0],
+                                            this->crange[1]);
+  for (unsigned i=0;i<this->GetNumberOfContours();i++)
+    {
+    this->Impl->Contours[i].ChangeColorTable(this->Impl->Table);
     }
 }
 

@@ -4,12 +4,16 @@
 #define BOOST_SP_DISABLE_THREADS
 
 #include <cassert>
+#include <cfloat>
 #include <vector>
-#include <stdio.h>
+#include <cstdio>
 
 #include <vtkm/Types.h>
 #include <vtkm/VecVariable.h>
 #include <vtkm/VectorAnalysis.h>
+#include <vtkm/cont/ArrayHandle.h>
+#include <vtkm/cont/cuda/internal/DeviceAdapterTagCuda.h>
+#include <vtkm/exec/cuda/internal/ArrayPortalFromThrust.h>
 #include <vtkm/cont/ErrorControlBadType.h>
 
 typedef vtkm::Vec<vtkm::UInt8,4> Color;
@@ -30,128 +34,45 @@ Color Lerp(const Color& color0,
 
 class ColorTable
 {
-  public:
-  enum { MaxSize = 5 };
-
+public:
   enum Preset
   {
     COOLTOWARM,
     BLACKBODY,
     BLUETOREDRAINBOW,
     GRAYSCALE,
-    GREENWHITELINEAR
+    GREENWHITELINEAR,
+    RUNTIME = -1
   };
+};
+
+//exec side representation of a single color table
+class RuntimeColorTable : public ColorTable
+{
+public:
+  FPType Min;
+  FPType Max;
+  vtkm::IdComponent NumberOfColors;
+
+  Color* Palette;
+  float* Pivots;
 
   VTKM_EXEC_CONT_EXPORT
-  ColorTable()
+  RuntimeColorTable()
+    : Min(0.0)
+    , Max(1.0)
+    , NumberOfColors(0)
+    , Palette(NULL)
+    , Pivots(NULL)
   {
-    this->NumberOfColors = MaxSize;
-    PresetColorTable(BLUETOREDRAINBOW);
-    this->Min = 0.;
-    this->Max = 1.;
   }
 
-  VTKM_EXEC_CONT_EXPORT
-  ColorTable(const ColorTable& other)
-  {
-    this->Min = other.Min;
-    this->Max = other.Max;
-    this->NumberOfColors = other.NumberOfColors;
-    for (unsigned i=0;i<MaxSize;i++)
-      {
-      this->Palette[i] = other.Palette[i];
-      this->Pivots[i] = other.Pivots[i];
-      }
-  }
 
-  VTKM_EXEC_CONT_EXPORT
-  ColorTable& operator=(const ColorTable& other)
-  {
-    if (this != &other)
-      {
-      this->Min = other.Min;
-      this->Max = other.Max;
-      this->NumberOfColors = other.NumberOfColors;
-      for (unsigned i=0;i<MaxSize;i++)
-        {
-        this->Palette[i] = other.Palette[i];
-        this->Pivots[i] = other.Pivots[i];
-        }
-      }
-    return *this;
-  }
+  RuntimeColorTable(FPType cmin, FPType cmax,
+                    const std::vector<Color>& palette,
+                    const std::vector<float>& pivots);
 
-  VTKM_EXEC_CONT_EXPORT
-  void PresetColorTable(Preset i)
-  {
-    switch(i)
-      {
-      case COOLTOWARM:
-        SetNumberOfColors(3);
-        SetPaletteColor(0,Color(59,76,192,255),0.);
-        SetPaletteColor(1,Color(220,220,220,255),.5);
-        SetPaletteColor(2,Color(180,4,38,255),1.);
-        break;
-      case BLACKBODY:
-        SetNumberOfColors(4);
-        SetPaletteColor(0,Color(0,0,0,255),0.);
-        SetPaletteColor(1,Color(230,0,0,255),.4);
-        SetPaletteColor(2,Color(230,230,0,255),.8);
-        SetPaletteColor(3,Color(255,255,255,255),1.);
-        break;
-      case BLUETOREDRAINBOW:
-        SetNumberOfColors(5);
-        SetPaletteColor(0,Color(0,0,255,255),0.);
-        SetPaletteColor(1,Color(0,255,255,255),.25);
-        SetPaletteColor(2,Color(0,255,0,255),.5);
-        SetPaletteColor(3,Color(255,255,0,255),.75);
-        SetPaletteColor(4,Color(255,0,0,255),1.);
-        break;
-      case GRAYSCALE:
-        SetNumberOfColors(2);
-        SetPaletteColor(0,Color(0,0,0,255),0.);
-        SetPaletteColor(1,Color(255,255,255,255),1.);
-        break;
-      case GREENWHITELINEAR:
-        SetNumberOfColors(3);
-        SetPaletteColor(0,Color(0,0,0,255),0.);
-        SetPaletteColor(1,Color(15,138,54,255),.5);
-        SetPaletteColor(2,Color(255,255,255,255),1.);
-        break;
-      }
-  }
-
-  VTKM_EXEC_CONT_EXPORT
-  void SetRange(FPType min,FPType max)
-  {
-    float oldRange = this->Max - this->Min;
-    float newRange = max - min;
-    for (unsigned i=0;i<5;i++)
-      {
-      float tmp = this->Pivots[i];
-      float normalizedPivot = (this->Pivots[i] - this->Min)/oldRange;
-      this->Pivots[i] = min + normalizedPivot*newRange;
-      }
-    this->Min = min;
-    this->Max = max;
-  }
-
-  VTKM_EXEC_CONT_EXPORT
-  void SetNumberOfColors(vtkm::IdComponent nColors)
-  {
-    assert(nColors<=MaxSize);
-    this->NumberOfColors = nColors;
-  }
-
-  VTKM_EXEC_CONT_EXPORT
-  void SetPaletteColor(vtkm::IdComponent i,
-                       const Color& color,
-                       float normalizedPivot)
-  {
-    assert(i<MaxSize);
-    this->Palette[i] = color;
-    this->Pivots[i] = this->Min + normalizedPivot*(this->Max - this->Min);
-  }
+  void ReleaseResources();
 
   VTKM_EXEC_CONT_EXPORT
   Color operator()(const FPType& value) const
@@ -195,8 +116,8 @@ class ColorTable
     return this->Pivots[this->NumberOfColors-1];
   }
 
-  protected:
-VTKM_EXEC_CONT_EXPORT
+protected:
+  VTKM_EXEC_CONT_EXPORT
   bool ColorIsInInterval(const Color& color,
                          vtkm::IdComponent interval,
                          float& weight) const
@@ -230,12 +151,76 @@ VTKM_EXEC_CONT_EXPORT
       return true;
       }
   }
-
-  FPType Min;
-  FPType Max;
-  vtkm::IdComponent NumberOfColors;
-  vtkm::Vec<Color,MaxSize> Palette;
-  vtkm::Vec<float,MaxSize> Pivots;
 };
+
+static
+RuntimeColorTable make_ColorTable(ColorTable::Preset i,
+                                  FPType min, FPType max)
+{
+  static std::vector<Color> palette;
+  static std::vector<float> pivots;
+  vtkm::Id numColors = 0;
+
+  switch(i)
+  {
+    //1. ColorTable need to normalize the pivots after construction
+    //based on the min & max
+  case ColorTable::RUNTIME:
+    //
+    //Here be where we hack
+    break;
+  case ColorTable::COOLTOWARM:
+    numColors = 3;
+    palette.resize(numColors); pivots.resize(numColors);
+    palette[0] = Color(59,76,192,255); pivots[0] = 0.0;
+    palette[1] = Color(220,220,220,255); pivots[1] = .5;
+    palette[2] = Color(180,4,38,255); pivots[2] = 1.;
+    break;
+  case ColorTable::BLACKBODY:
+    numColors = 4;
+    palette.resize(numColors); pivots.resize(numColors);
+    palette[0] = Color(0,0,0,255); pivots[0] = 0.0;
+    palette[1] = Color(230,0,0,255); pivots[1] = .4;
+    palette[2] = Color(230,230,0,255); pivots[2] = .8;
+    palette[3] = Color(255,255,255,255); pivots[3] = 1.;
+    break;
+  case ColorTable::BLUETOREDRAINBOW:
+    numColors = 5;
+    palette.resize(numColors); pivots.resize(numColors);
+    palette[0] = Color(0,0,255,255); pivots[0] = 0.0;
+    palette[1] = Color(0,255,255,255); pivots[1] = .25;
+    palette[2] = Color(0,255,0,255); pivots[2] = 0.5;
+    palette[3] = Color(255,255,0,255); pivots[3] = .75;
+    palette[4] = Color(255,0,0,255); pivots[4] = 1.;
+    break;
+  case ColorTable::GRAYSCALE:
+    numColors = 2;
+    palette.resize(numColors); pivots.resize(numColors);
+    palette[0] = Color(0,0,0,255); pivots[0] = 0.0;
+    palette[1] = Color(255,255,255,255); pivots[1] = 1.;
+    break;
+  case ColorTable::GREENWHITELINEAR:
+    numColors = 3;
+    palette.resize(numColors); pivots.resize(numColors);
+    palette[0] = Color(0,0,0,255); pivots[0] = 0.0;
+    palette[1] = Color(15,138,54,255); pivots[1] = .5;
+    palette[2] = Color(255,255,255,255); pivots[2] = 1.;
+    break;
+  }
+
+  return RuntimeColorTable(min, max, palette, pivots);
+}
+
+static
+RuntimeColorTable make_CustomColorTable(const uint8_t* rgba, const float* loc,
+                                        size_t n, FPType cmin, FPType cmax) {
+  std::vector<Color> palette(n);
+  std::vector<float> pivots(n);
+  for(size_t i=0; i < n; ++i) {
+    palette[i] = Color(rgba[i*4+0], rgba[i*4+1], rgba[i*4+2], rgba[i*4+3]);
+    pivots[i] = loc[i];
+  }
+  return RuntimeColorTable(cmin, cmax, palette, pivots);
+}
 
 #endif

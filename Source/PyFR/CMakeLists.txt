@@ -1,4 +1,5 @@
 set(PyFR_SRCS
+  ColorTable.cu
   PyFRContourData.cu
   PyFRData.cu
   PyFRCrinkleClipFilter.cu

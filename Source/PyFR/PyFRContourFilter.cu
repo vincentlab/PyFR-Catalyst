@@ -7,6 +7,7 @@
 
 #include "CrinkleClip.h"
 #include "PyFRData.h"
+#include "PyFRContour.h"
 #include "PyFRContourData.h"
 
 #include <vtkm/cont/Timer.h>
