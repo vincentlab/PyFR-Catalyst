@@ -21,5 +21,13 @@ struct PyFRContourFilter
       std::numeric_limits<float>::signaling_NaN()
     );
   }
+  const std::pair<FPType,FPType> DataRange() const {
+    return std::make_pair(std::numeric_limits<float>::min(),
+                          std::numeric_limits<float>::max());
+  }
+  const std::pair<FPType,FPType> ColorRange() const {
+    return std::make_pair(std::numeric_limits<float>::min(),
+                          std::numeric_limits<float>::max());
+  }
 };
 #endif

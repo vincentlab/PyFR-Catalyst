@@ -66,10 +66,11 @@ if (BuildServerLibs)
 endif()
 
 if (BuildClientLibs)
+  find_package(OpenGL REQUIRED)
   add_paraview_plugin(pyfr_plugin "1.0" SERVER_MANAGER_XML PyFR.xml SERVER_MANAGER_SOURCES ${vtkPyFR_SRCS})
   set_target_properties(pyfr_plugin PROPERTIES COMPILE_FLAGS "-DFPType=double")
   target_include_directories(pyfr_plugin PUBLIC ${PROJECT_SOURCE_DIR}/Source/PyFRStub)
-  target_link_libraries(pyfr_plugin PRIVATE vtkPVCatalyst vtkPVVTKExtensionsDefault vtkPVClientServerCoreCore)
+  target_link_libraries(pyfr_plugin PRIVATE vtkPVCatalyst vtkPVVTKExtensionsDefault vtkPVClientServerCoreCore ${OPENGL_LIBRARIES})
   list( APPEND vtkPyFRLibs pyfr_plugin )
 endif()
 

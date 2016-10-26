@@ -48,6 +48,7 @@
 #include <vtkTextRepresentation.h>
 #include <vtkVector.h>
 #include <vtkXMLUnstructuredGridReader.h>
+#include <vtkProperty.h>
 
 #include "vtkPyFRData.h"
 #include "vtkPyFRCrinkleClipFilter.h"
@@ -95,6 +96,19 @@ reduce(T* v, size_t n, vtkCommunicator::StandardOperations op) {
     comm->Reduce(v, NULL, n, op, dest);
   }
 }
+
+
+static void
+output_camera(/*const*/ vtkCamera* cam) {
+  double eye[3] = {0.0};
+  double ref[3] = {0.0};
+  double vup[3] = {0.0};
+  cam->GetPosition(eye);
+  cam->GetFocalPoint(ref);
+  cam->GetViewUp(vup);
+  printf("eye={%lg %lg %lg} ref={%lf %lf %lf} vup={%lf %lf %lf}\n",
+         eye[0],eye[1],eye[2], ref[0],ref[1],ref[2],
+         vup[0],vup[1],vup[2]);
 }
 
 template <class Mapper>
@@ -114,6 +128,9 @@ void vtkAddActor(vtkSmartPointer<Mapper> mapper,
   vtkNew<vtkActor> actor;
   actor->SetMapper(mapper);
 
+  actor->GetProperty()->SetSpecular(0.5);
+  actor->GetProperty()->SetSpecularPower(25.0);
+
   ren->AddActor(actor.GetPointer());
 }
 
@@ -121,6 +138,9 @@ void vtkUpdateFilter(vtkSMSourceProxy* filter, double time)
 {
   std::cout << "filter: " << filter->GetClassName() << " update to time: " << time << std::endl;
   filter->UpdatePipeline(time);
+}
+
+
 }
 
 vtkStandardNewMacro(vtkPyFRPipeline);
@@ -317,7 +337,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   vtkSMPropertyHelper(this->Contour, "Input").Set(gradients, 0);
 #endif
   vtkSMPropertyHelper(this->Contour,"ContourField").Set(0);
-  vtkSMPropertyHelper(this->Contour,"ColorField").Set(0);
+  vtkSMPropertyHelper(this->Contour,"ColorField").Set(8);
 
   // Set up the isovalues to use.
   const PyFRData* dta = pyfrData->GetData();
@@ -468,19 +488,7 @@ int vtkPyFRPipeline::RequestDataDescription(
   return 1;
 }
 
-static void
-output_camera(/*const*/ vtkCamera* cam) {
-  double eye[3] = {0.0};
-  double ref[3] = {0.0};
-  double vup[3] = {0.0};
-  cam->GetPosition(eye);
-  cam->GetFocalPoint(ref);
-  cam->GetViewUp(vup);
-  printf("eye={%lg %lg %lg} ref={%lf %lf %lf} vup={%lf %lf %lf}\n",
-         eye[0],eye[1],eye[2], ref[0],ref[1],ref[2],
-         vup[0],vup[1],vup[2]);
-}
-
+//----------------------------------------------------------------------------
 void vtkPyFRPipeline::SetResolution(uint32_t width, uint32_t height)
 {
   vtkSMSessionProxyManager* sessionProxyManager =
@@ -494,6 +502,34 @@ void vtkPyFRPipeline::SetResolution(uint32_t width, uint32_t height)
       vtkSMViewProxy::SafeDownCast(views->GetItemAsObject(i));
     vtkVector2i isz(width, height);
     vtkSMPropertyHelper(viewProxy, "ViewSize").Set(isz.GetData(), 2);
+    }
+}
+
+//----------------------------------------------------------------------------
+void vtkPyFRPipeline::SetSpecularLighting(float coefficient, float power)
+{
+  vtkSMSessionProxyManager* sessionProxyManager =
+    vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
+  vtkNew<vtkCollection> views;
+  sessionProxyManager->GetProxies("views",views.GetPointer());
+  const size_t nviews = views->GetNumberOfItems();
+  for (int i=0; i < nviews; i++)
+    {
+    vtkSMViewProxy* viewProxy =
+      vtkSMViewProxy::SafeDownCast(views->GetItemAsObject(i));
+    vtkSMRenderViewProxy* rview = vtkSMRenderViewProxy::SafeDownCast(viewProxy);
+    vtkRenderer* ren = rview->GetRenderer();
+
+    vtkActorCollection* actors = ren->GetActors();
+    vtkCollectionSimpleIterator ait;
+    actors->InitTraversal(ait);
+
+    vtkActor *actor;
+    while ( (actor = actors->GetNextActor(ait)) )
+      {
+      actor->GetProperty()->SetSpecular(coefficient);
+      actor->GetProperty()->SetSpecularPower(power);
+      }
     }
 }
 
@@ -637,6 +673,7 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
           output_camera(cam);
         }
       );
+
       const int magnification = 1;
       const int quality = 100;
       char fname[32] = {0};

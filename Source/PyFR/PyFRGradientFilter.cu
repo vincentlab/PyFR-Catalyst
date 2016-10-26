@@ -65,17 +65,13 @@ PyFRGradientFilter::operator()(PyFRData* inputData, PyFRData* outputData)
     QUADRATIC = 2
   };
   vtkm::cont::Field dgrad("density_gradient_magnitude", LINEAR,
-    vtkm::cont::Field::ASSOC_POINTS,
-    vtkm::cont::DynamicArrayHandle(densityGradientMag));
+    vtkm::cont::Field::ASSOC_POINTS, densityGradientMag);
   vtkm::cont::Field pgrad("pressure_gradient_magnitude", LINEAR,
-    vtkm::cont::Field::ASSOC_POINTS,
-    vtkm::cont::DynamicArrayHandle(pressureGradientMag));
+    vtkm::cont::Field::ASSOC_POINTS, pressureGradientMag);
   vtkm::cont::Field vgrad("velocity_gradient_magnitude", LINEAR,
-    vtkm::cont::Field::ASSOC_POINTS,
-    vtkm::cont::DynamicArrayHandle(velocityGradientMag));
+    vtkm::cont::Field::ASSOC_POINTS, velocityGradientMag);
   vtkm::cont::Field qcriterion("velocity_qcriterion", LINEAR,
-    vtkm::cont::Field::ASSOC_POINTS,
-    vtkm::cont::DynamicArrayHandle(velocityQCriterion));
+    vtkm::cont::Field::ASSOC_POINTS, velocityQCriterion);
 
   output.AddField(dgrad);
   output.AddField(pgrad);
