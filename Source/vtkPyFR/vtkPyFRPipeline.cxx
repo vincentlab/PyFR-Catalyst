@@ -410,7 +410,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
       this->controller->RegisterPipelineProxy(polydataWriter,"polydataWriter");
     }
 
-  const bool plane = false;
+  const bool plane = true;
   if(plane)
     {
     vtkSmartPointer<vtkSMSourceProxy> airplane;
@@ -421,7 +421,15 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     this->controller->PreInitializeProxy(airplane);
       {
       std::ostringstream o;
-      o << STRINGIFY(DATA_DIR) << "/airplane.vtu";
+      const char* ddir = getenv("PYFR_DATA_DIR");
+      if(NULL == ddir)
+        {
+        std::cerr << "Please set the PYFR_DATA_DIR environment variable to "
+                     "the directory containing wall.vtu.\n";
+        ddir = "/lustre/atlas2/ard116/proj-shared/Test/T106D_cascade_3d-1-105.600PCC-001RCPLDG/TR1/wall";
+        std::cerr << "Assuming " << ddir << " for now ...\n";
+        }
+      o << ddir << "/wall.vtu";
       vtkSMPropertyHelper(airplane, "FileName").Set(o.str().c_str());
       }
     airplane->UpdateVTKObjects();
