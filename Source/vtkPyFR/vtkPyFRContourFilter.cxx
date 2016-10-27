@@ -32,6 +32,7 @@ vtkStandardNewMacro(vtkPyFRContourFilter);
 //----------------------------------------------------------------------------
 vtkPyFRContourFilter::vtkPyFRContourFilter() : ContourField(0)
 {
+  this->ColorPaletteNeedsSyncing = false;
   this->ColorPalette = 1;
   this->ColorRange[0] = 0.;
   this->ColorRange[1] = 1.;
@@ -40,6 +41,31 @@ vtkPyFRContourFilter::vtkPyFRContourFilter() : ContourField(0)
 //----------------------------------------------------------------------------
 vtkPyFRContourFilter::~vtkPyFRContourFilter()
 {
+}
+
+//----------------------------------------------------------------------------
+void vtkPyFRContourFilter::SetColorPalette(int palette)
+{
+  if(palette != this->ColorPalette)
+  {
+    std::cout << "SetColorPalette: " << palette << " " << this->ColorPalette << endl;
+    this->Modified();
+    this->ColorPaletteNeedsSyncing = true;
+    this->ColorPalette = palette;
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkPyFRContourFilter::SetColorRange(double start, double end)
+{
+  if(start != this->ColorRange[0] && end != this->ColorRange[1])
+  {
+    std::cout << "SetColorRange: " << start << " " << ColorRange[0] << endl;
+    this->Modified();
+    this->ColorPaletteNeedsSyncing = true;
+    this->ColorRange[0] = start;
+    this->ColorRange[1] = end;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -65,7 +91,13 @@ int vtkPyFRContourFilter::RequestData(
     }
   filter.SetContourField(this->ContourField);
   filter(input->GetData(),output->GetData());
-  output->SetColorPalette(this->ColorPalette,this->ColorRange);
+
+  if(this->ColorPaletteNeedsSyncing)
+    {
+    output->SetColorPalette(this->ColorPalette,this->ColorRange);
+    this->ColorPaletteNeedsSyncing = false;
+    }
+
   filter.MapFieldOntoIsosurfaces(this->MappedField,input->GetData(),
                                  output->GetData());
   this->minmax = filter.Range();

@@ -27,10 +27,10 @@ public:
   // Returns the min/max of the scalar field we are contouring.
   std::pair<float,float> Range() const;
 
-  vtkSetMacro(ColorPalette,int);
+  void SetColorPalette(int);
   vtkGetMacro(ColorPalette,int);
 
-  vtkSetVector2Macro(ColorRange,double);
+  void SetColorRange(double, double);
   vtkGetVectorMacro(ColorRange,double,2);
 
 protected:
@@ -40,6 +40,8 @@ protected:
   std::vector<double> ContourValues;
   int ContourField;
   int MappedField;
+
+  bool ColorPaletteNeedsSyncing;
   int ColorPalette;
   double ColorRange[2];
 

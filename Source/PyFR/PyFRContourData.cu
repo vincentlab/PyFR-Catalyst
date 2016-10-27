@@ -25,7 +25,7 @@ class PyFRContourData::ContourDataImpl
 public:
   ContourDataImpl()
   {
-    TablePreset = ColorTable::BLUETOREDRAINBOW;
+    TablePreset = ColorTable::GRAYSCALE;
     this->Table = make_ColorTable(TablePreset, 0.0, 1.0);
   }
 
@@ -137,7 +137,7 @@ void PyFRContourData::ComputeBounds(FPType* bounds) const
 //----------------------------------------------------------------------------
 void PyFRContourData::SetColorPalette(int preset, FPType min, FPType max)
 {
-  std::cout << "SetColorPalette: " << preset << std::endl;
+  std::cout << "PyFRContourData SetColorPalette: " << preset << std::endl;
   this->Impl->Table = make_ColorTable(static_cast<ColorTable::Preset>(preset), min, max);
   this->Impl->TablePreset = static_cast<ColorTable::Preset>(preset);
 

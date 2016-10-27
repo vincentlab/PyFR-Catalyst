@@ -315,8 +315,6 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   this->controller->PreInitializeProxy(this->Slice);
   vtkSMPropertyHelper(this->Slice, "Input").Set(gradients, 0);
   vtkSMPropertyHelper(this->Slice,"ColorField").Set(0);
-  double sliceColorRange[2] = {0.695,0.7385};
-  vtkSMPropertyHelper(this->Slice,"ColorRange").Set(sliceColorRange,2);
   this->Slice->UpdateVTKObjects();
   this->controller->PostInitializeProxy(this->Slice);
   this->controller->RegisterPipelineProxy(this->Slice,"Slice");
@@ -346,12 +344,6 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     root(printf("[catalyst] setting isovalue %zu: %g\n", i, isovalues[i]));
     vtkSMPropertyHelper(this->Contour, "ContourValues").Set(i, isovalues[i]);
   }
-  auto mm = std::minmax_element(isovalues.begin(), isovalues.end());
-  const double mm_isocol[2] = {*mm.first-1.0, *mm.second+1.0};
-  root(printf("[catalyst] contour color range: %g--%g.\n", mm_isocol[0],
-              mm_isocol[1]));
-  vtkSMPropertyHelper(this->Contour, "ColorRange").Set(mm_isocol, 2);
-
   this->Contour->UpdateVTKObjects();
   this->controller->PostInitializeProxy(this->Contour);
   this->controller->RegisterPipelineProxy(this->Contour,"Contour");
