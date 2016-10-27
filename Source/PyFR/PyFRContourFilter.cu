@@ -95,8 +95,6 @@ void PyFRContourFilter::operator()(PyFRData* input,
     verticesVec,
     normalsVec
   );
-
-  std::cout << "time to contour: " << timer.GetElapsedTime() << std::endl;
 }
 //----------------------------------------------------------------------------
 void PyFRContourFilter::MapFieldOntoIsosurfaces(int field,
@@ -127,8 +125,6 @@ void PyFRContourFilter::MapFieldOntoIsosurfaces(int field,
   vtkm::cont::Timer<CudaTag> timer;
   isosurfaceFilter.MapFieldOntoIsosurfaces(projectedArray,
                                            scalarDataHandleVec);
-
-  std::cout << "time to map onto contour: " << timer.GetElapsedTime() << std::endl;
 
 }
 

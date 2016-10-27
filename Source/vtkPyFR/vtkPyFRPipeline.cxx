@@ -136,7 +136,7 @@ void vtkAddActor(vtkSmartPointer<Mapper> mapper,
 
 void vtkUpdateFilter(vtkSMSourceProxy* filter, double time)
 {
-  std::cout << "filter: " << filter->GetClassName() << " update to time: " << time << std::endl;
+  // std::cout << "filter: " << filter->GetClassName() << " update to time: " << time << std::endl;
   filter->UpdatePipeline(time);
 }
 
@@ -457,6 +457,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   // Initialize the "link"
   this->InsituLink->InsituInitialize(vtkSMProxyManager::GetProxyManager()->
                                      GetActiveSessionProxyManager());
+  this->SetSpecularLighting(0.8,50);
 }
 
 //----------------------------------------------------------------------------

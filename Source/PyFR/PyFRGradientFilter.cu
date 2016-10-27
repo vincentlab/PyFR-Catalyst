@@ -78,6 +78,4 @@ PyFRGradientFilter::operator()(PyFRData* inputData, PyFRData* outputData)
   output.AddField(vgrad);
   output.AddField(qcriterion);
 
-  std::cout << "time to compute gradients " << timer.GetElapsedTime()
-            << std::endl;
 }

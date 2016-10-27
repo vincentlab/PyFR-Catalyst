@@ -137,7 +137,6 @@ void PyFRContourData::ComputeBounds(FPType* bounds) const
 //----------------------------------------------------------------------------
 void PyFRContourData::SetColorPalette(int preset, FPType min, FPType max)
 {
-  std::cout << "PyFRContourData SetColorPalette: " << preset << std::endl;
   this->Impl->Table = make_ColorTable(static_cast<ColorTable::Preset>(preset), min, max);
   this->Impl->TablePreset = static_cast<ColorTable::Preset>(preset);
 

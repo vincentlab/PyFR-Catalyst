@@ -48,7 +48,6 @@ void vtkPyFRContourFilter::SetColorPalette(int palette)
 {
   if(palette != this->ColorPalette)
   {
-    std::cout << "SetColorPalette: " << palette << " " << this->ColorPalette << endl;
     this->Modified();
     this->ColorPaletteNeedsSyncing = true;
     this->ColorPalette = palette;
@@ -60,7 +59,6 @@ void vtkPyFRContourFilter::SetColorRange(double start, double end)
 {
   if(start != this->ColorRange[0] && end != this->ColorRange[1])
   {
-    std::cout << "SetColorRange: " << start << " " << ColorRange[0] << endl;
     this->Modified();
     this->ColorPaletteNeedsSyncing = true;
     this->ColorRange[0] = start;

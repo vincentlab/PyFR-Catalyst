@@ -34,6 +34,4 @@ void PyFRMergePointsFilter::operator()(PyFRData* inputData,
   merge.Run(input.GetCellSet().ResetCellSetList(MergePointsFilterCellSets()),
             input, output, CudaTag());
 
-  std::cout << "time to compute merge points: " << timer.GetElapsedTime() << std::endl;
-
 }
