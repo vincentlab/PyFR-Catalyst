@@ -27,6 +27,23 @@ extern "C"
   void CatalystSetColorTable(void*, const uint8_t* rgba, const float* loc,
                              size_t n);
   void CatalystSetColorRange(void*, double low, double high);
+
+  //Fields:
+  //0 = "density";
+  //1 = "pressure";
+  //2 = "velocity_u";
+  //3 = "velocity_v";
+  //4 = "velocity_w";
+  //5 = "density_gradient_magnitude";
+  //6 = "pressure_gradient_magnitude";
+  //7 = "velocity_gradient_magnitude";
+  //8 = "velocity_qcriterion";
+  //
+  void CatalystSetFieldToContourBy(int field);
+
+  void CatalystSetFieldToColorBy(int field);
+
+
 #ifdef __cplusplus
 }
 #endif

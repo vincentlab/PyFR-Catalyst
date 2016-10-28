@@ -65,7 +65,7 @@ void vtkPyFRParallelSliceFilter::SetColorPalette(int palette)
 //----------------------------------------------------------------------------
 void vtkPyFRParallelSliceFilter::SetColorRange(double start, double end)
 {
-  if(start != this->ColorRange[0] && end != this->ColorRange[1])
+  if(start != this->ColorRange[0] || end != this->ColorRange[1])
   {
     this->Modified();
     this->ColorPaletteNeedsSyncing = true;

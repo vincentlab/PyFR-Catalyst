@@ -24,12 +24,10 @@ public:
 
   void SetColorPreset(int);
   void SetColorRange(FPType,FPType);
-  void SetCustomColorTable(const uint8_t* rgba, const float* loc, size_t n);
 
 private:
   class ContourDataImpl;
   ContourDataImpl* Impl;
-  FPType crange[2];
 };
 
 

@@ -159,6 +159,32 @@ void CatalystSetColorRange(void*, double low, double high)
 }
 
 //----------------------------------------------------------------------------
+void CatalystSetFieldToContourBy(int field)
+{
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  pipeline->SetFieldToContourBy(field);
+}
+
+//----------------------------------------------------------------------------
+void CatalystSetFieldToColorBy(int field)
+{
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  pipeline->SetFieldToColorBy(field);
+}
+
+//----------------------------------------------------------------------------
 void CatalystFinalize(void* p)
 {
   vtkPyFRData* data = static_cast<vtkPyFRData*>(p);
