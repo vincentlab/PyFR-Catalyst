@@ -44,8 +44,13 @@ extern "C"
   //
   void CatalystSetFieldToContourBy(int field);
 
-  void CatalystSetFieldToColorBy(int field);
+  //Specify the location and number of slice planes
+  void CatalystSetSlicePlanes(float origin[3], float normal[3],
+                              int number, double spacing);
 
+  //Depending on what mode we initialized catalyst in, this will change
+  //field to color the contour or slice by
+  void CatalystSetFieldToColorBy(int field);
 
 #ifdef __cplusplus
 }

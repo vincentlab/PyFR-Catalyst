@@ -173,6 +173,20 @@ void CatalystSetFieldToContourBy(int field)
 }
 
 //----------------------------------------------------------------------------
+void CatalystSetSlicePlanes(float origin[3], float normal[3],
+                            int number, double spacing)
+{
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  pipeline->SetSlicePlanes(origin,normal,number,spacing);
+}
+
+//----------------------------------------------------------------------------
 void CatalystSetFieldToColorBy(int field)
 {
   if(Processor == NULL)

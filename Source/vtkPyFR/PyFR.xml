@@ -225,7 +225,7 @@
           name="NumberOfPlanes"
           command="SetNumberOfPlanes"
           number_of_elements="1"
-          default_values="5">
+          default_values="1">
         <IntRangeDomain name="range" />
         <Documentation>
           This property indicates how many parallel planes will be
@@ -236,7 +236,7 @@
           name="Spacing"
           command="SetSpacing"
           number_of_elements="1"
-          default_values="3">
+          default_values="1">
         <DoubleRangeDomain name="range" />
         <Documentation>
           This property determines the spacing between parallel slice planes.
@@ -256,7 +256,7 @@
         </BoundsDomain>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetNormal"
-                            default_values="0.0 1.0 0.0"
+                            default_values="0.0 0.5 1.0"
                             name="Normal"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />

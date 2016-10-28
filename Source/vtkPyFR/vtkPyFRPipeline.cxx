@@ -597,6 +597,23 @@ void vtkPyFRPipeline::SetColorRange(FPType low, FPType high)
 }
 
 //----------------------------------------------------------------------------
+void vtkPyFRPipeline::SetFieldToColorBy(int field)
+{
+  if(this->Contour)
+  {
+    vtkSMPropertyHelper(this->Contour,"ColorField").Set(field);
+    this->Contour->UpdatePropertyInformation();
+    this->Contour->UpdateVTKObjects();
+  }
+  if(this->Slice)
+  {
+    vtkSMPropertyHelper(this->Slice,"ColorField").Set(field);
+    this->Slice->UpdatePropertyInformation();
+    this->Slice->UpdateVTKObjects();
+  }
+}
+
+//----------------------------------------------------------------------------
 void vtkPyFRPipeline::SetFieldToContourBy(int field)
 {
   if(this->Contour)
@@ -608,19 +625,19 @@ void vtkPyFRPipeline::SetFieldToContourBy(int field)
 }
 
 //----------------------------------------------------------------------------
-void vtkPyFRPipeline::SetFieldToColorBy(int field)
+void vtkPyFRPipeline::SetSlicePlanes(float origin[3], float normal[3],
+                                     int number, double spacing)
 {
-  if(this->Contour)
-  {
-    std::cout << "vtkPyFRPipeline::SetFieldToColorBy: " << field << std::endl;
-    vtkSMPropertyHelper(this->Contour,"ColorField").Set(field);
-    this->Contour->UpdatePropertyInformation();
-    this->Contour->UpdateVTKObjects();
-  }
   if(this->Slice)
   {
-    vtkSMPropertyHelper(this->Slice,"ColorField").Set(field);
-    this->Contour->UpdatePropertyInformation();
+    for(int i=0; i < 3; ++i)
+      {
+      vtkSMPropertyHelper(this->Slice,"Origin").Set(i, origin[i]);
+      vtkSMPropertyHelper(this->Slice,"Normal").Set(i, normal[i]);
+      }
+    vtkSMPropertyHelper(this->Slice,"NumberOfPlanes").Set(number);
+    vtkSMPropertyHelper(this->Slice,"Spacing").Set(spacing);
+    this->Slice->UpdatePropertyInformation();
     this->Slice->UpdateVTKObjects();
   }
 }
