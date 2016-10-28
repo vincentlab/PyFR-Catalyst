@@ -31,8 +31,12 @@ public:
   virtual void SetResolution(uint32_t w, uint32_t h);
   virtual void SetSpecularLighting(float coefficient, float power);
   virtual int CoProcess(vtkCPDataDescription* dataDescription);
+
   virtual void SetColorTable(const uint8_t* rgba, const float* loc, size_t n);
   virtual void SetColorRange(FPType, FPType);
+
+  virtual void SetFieldToContourBy(int);
+  virtual void SetFieldToColorBy(int);
 
   vtkSmartPointer<vtkSMSourceProxy> GetContour() { return this->Contour; }
   vtkSmartPointer<vtkSMSourceProxy> GetSlice()   { return this->Slice;   }
