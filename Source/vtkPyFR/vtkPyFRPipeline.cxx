@@ -542,9 +542,35 @@ void vtkPyFRPipeline::SetColorRange(FPType low, FPType high)
 {
   vtkObjectBase* obj = this->Contour->GetClientSideObject();
   vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
-  vtkPyFRContourData* cdata = filt->GetOutput();
-  // -1 is ColorTable::RUNTIME; we can't include that header.
-  cdata->SetColorRange(low, high);
+
+  filt->SetColorRange(low,high);
+}
+
+void vtkPyFRPipeline::SetFieldToContourBy(int field)
+{
+  if(this->Contour)
+  {
+    vtkSMPropertyHelper(this->Contour,"ContourField").Set(field);
+    this->Contour->UpdatePropertyInformation();
+    this->Contour->UpdateVTKObjects();
+  }
+}
+
+void vtkPyFRPipeline::SetFieldToColorBy(int field)
+{
+  if(this->Contour)
+  {
+    std::cout << "vtkPyFRPipeline::SetFieldToColorBy: " << field << std::endl;
+    vtkSMPropertyHelper(this->Contour,"ColorField").Set(field);
+    this->Contour->UpdatePropertyInformation();
+    this->Contour->UpdateVTKObjects();
+  }
+  if(this->Slice)
+  {
+    vtkSMPropertyHelper(this->Slice,"ColorField").Set(field);
+    this->Contour->UpdatePropertyInformation();
+    this->Slice->UpdateVTKObjects();
+  }
 }
 
 //----------------------------------------------------------------------------
