@@ -526,15 +526,16 @@ void vtkPyFRPipeline::SetSpecularLighting(float coefficient, float power)
     }
 }
 
+void fillRuntimeVectors(const uint8_t* rgba, const float* loc, size_t n);
+
 void vtkPyFRPipeline::SetColorTable(const uint8_t* rgba, const float* loc,
                                     size_t n)
 {
+  fillRuntimeVectors(rgba, loc, n);
+  // -1 is ColorTable::RUNTIME; we can't include that header.
   vtkObjectBase* obj = this->Contour->GetClientSideObject();
   vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
-  vtkPyFRContourData* cdata = filt->GetOutput();
-  // -1 is ColorTable::RUNTIME; we can't include that header.
-  cdata->SetColorPreset(-1);
-  cdata->SetCustomColorPalette(rgba, loc, n);
+  filt->SetColorPalette(-1);
 }
 
 void vtkPyFRPipeline::SetColorRange(FPType low, FPType high)

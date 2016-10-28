@@ -153,12 +153,15 @@ protected:
   }
 };
 
+void fetchRuntimeVectors(std::vector<Color>&, std::vector<float>&);
+void fillRuntimeVectors(const uint8_t* rgba, const float* loc, size_t n);
+
 static
 RuntimeColorTable make_ColorTable(ColorTable::Preset i,
                                   FPType min, FPType max)
 {
-  static std::vector<Color> palette;
-  static std::vector<float> pivots;
+  std::vector<Color> palette;
+  std::vector<float> pivots;
   vtkm::Id numColors = 0;
 
   switch(i)
@@ -166,8 +169,7 @@ RuntimeColorTable make_ColorTable(ColorTable::Preset i,
     //1. ColorTable need to normalize the pivots after construction
     //based on the min & max
   case ColorTable::RUNTIME:
-    //
-    //Here be where we hack
+    fetchRuntimeVectors(palette,pivots);
     break;
   case ColorTable::COOLTOWARM:
     numColors = 3;
@@ -209,18 +211,6 @@ RuntimeColorTable make_ColorTable(ColorTable::Preset i,
   }
 
   return RuntimeColorTable(min, max, palette, pivots);
-}
-
-static
-RuntimeColorTable make_CustomColorTable(const uint8_t* rgba, const float* loc,
-                                        size_t n, FPType cmin, FPType cmax) {
-  std::vector<Color> palette(n);
-  std::vector<float> pivots(n);
-  for(size_t i=0; i < n; ++i) {
-    palette[i] = Color(rgba[i*4+0], rgba[i*4+1], rgba[i*4+2], rgba[i*4+3]);
-    pivots[i] = loc[i];
-  }
-  return RuntimeColorTable(cmin, cmax, palette, pivots);
 }
 
 #endif
