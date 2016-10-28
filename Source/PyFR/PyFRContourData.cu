@@ -26,10 +26,11 @@ public:
   ContourDataImpl()
   {
     TablePreset = ColorTable::GRAYSCALE;
-    this->Table = make_ColorTable(TablePreset, 0.0, 1.0);
+    this->Table = make_ColorTable(TablePreset,0.0,1.0);
   }
 
   ColorTable::Preset TablePreset;
+
   RuntimeColorTable Table;
   std::vector<PyFRContour> Contours;
 };
@@ -38,8 +39,6 @@ public:
 PyFRContourData::PyFRContourData()
 {
   this->Impl = new ContourDataImpl;
-  this->crange[0] = FLT_MAX;
-  this->crange[1] = FLT_MIN;
 }
 
 //----------------------------------------------------------------------------
@@ -161,25 +160,6 @@ void PyFRContourData::SetColorRange(FPType min,FPType max)
   this->SetColorPalette(this->Impl->TablePreset,
                         min,
                         max);
-  this->crange[0] = min;
-  this->crange[1] = max;
-}
-
-void PyFRContourData::SetCustomColorTable(const uint8_t* rgba, const float* loc,
-                                          size_t n)
-{
-	if(this->crange[0] == FLT_MAX || this->crange[1] == FLT_MIN)
-    {
-      throw std::runtime_error("SetColorRange not yet called!  You need to set"
-                               " the color range before you can setup a custom"
-                               " color table.");
-    }
-  this->Impl->Table = make_CustomColorTable(rgba, loc, n, this->crange[0],
-                                            this->crange[1]);
-  for (unsigned i=0;i<this->GetNumberOfContours();i++)
-    {
-    this->Impl->Contours[i].ChangeColorTable(this->Impl->Table);
-    }
 }
 
 namespace transfer

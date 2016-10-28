@@ -23,17 +23,24 @@ public:
   vtkTypeMacro(vtkPyFRPipeline,vtkCPPipeline)
   virtual void PrintSelf(ostream& os, vtkIndent indent);
 
+  //pipelineMode 1=contour
+  //pipelineMode 2=slice
   virtual void Initialize(const char* hostName, int port, char* fileName,
-                          vtkCPDataDescription* dataDescription);
+                          int pipeline, vtkCPDataDescription* dataDescription);
 
   virtual int RequestDataDescription(vtkCPDataDescription* dataDescription);
 
   virtual void SetResolution(uint32_t w, uint32_t h);
   virtual void SetSpecularLighting(float coefficient, float power);
   virtual int CoProcess(vtkCPDataDescription* dataDescription);
+
   virtual void SetColorTable(const uint8_t* rgba, const float* loc, size_t n);
   virtual void SetColorRange(FPType, FPType);
+  virtual void SetFieldToColorBy(int);
 
+  virtual void SetFieldToContourBy(int);
+  virtual void SetSlicePlanes(float origin[3], float normal[3],
+                              int number, double spacing);
   vtkSmartPointer<vtkSMSourceProxy> GetContour() { return this->Contour; }
   vtkSmartPointer<vtkSMSourceProxy> GetSlice()   { return this->Slice;   }
 
@@ -43,6 +50,12 @@ protected:
 
   const PyFRData* PyData(vtkCPDataDescription*) const;
 
+  void InitPipeline1(vtkSmartPointer<vtkSMSourceProxy> input,
+                     vtkCPDataDescription* dataDescription);
+  void InitPipeline2(vtkSmartPointer<vtkSMSourceProxy> input,
+                     vtkCPDataDescription* dataDescription);
+  void DumpToFile(vtkCPDataDescription* dataDescription);
+
 private:
   vtkPyFRPipeline(const vtkPyFRPipeline&); // Not implemented
   void operator=(const vtkPyFRPipeline&); // Not implemented
@@ -50,13 +63,13 @@ private:
   vtkLiveInsituLink* InsituLink;
 
   std::string FileName;
+  int WhichPipeline;
 
   vtkSmartPointer<vtkSMSourceProxy> Clip;
   vtkSmartPointer<vtkSMSourceProxy> Contour;
   vtkSmartPointer<vtkSMSourceProxy> Slice;
 
-  vtkSmartPointer<vtkPyFRMapper> ContourMapper;
-  vtkSmartPointer<vtkPyFRMapper> SliceMapper;
+  vtkSmartPointer<vtkPyFRMapper> ActiveMapper;
 
   vtkSmartPointer<vtkTextActor> Timestamp;
 

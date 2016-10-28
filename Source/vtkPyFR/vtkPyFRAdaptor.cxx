@@ -39,7 +39,8 @@ namespace
   } while(0)
 
 //----------------------------------------------------------------------------
-void* CatalystInitialize(char* hostName, int pyport, char* outputfile, void* p)
+void* CatalystInitialize(char* hostName, int pyport, char* outputfile,
+                         int pipelineMode, void* p)
 {
   vtkPyFRData* data = vtkPyFRData::New();
   data->GetData()->Init(p);
@@ -75,7 +76,7 @@ void* CatalystInitialize(char* hostName, int pyport, char* outputfile, void* p)
   dataDescription->GetInputDescriptionByName("input")->SetGrid(data);
 
   vtkNew<vtkPyFRPipeline> pipeline;
-  pipeline->Initialize(host, port, outputfile, dataDescription.GetPointer());
+  pipeline->Initialize(host, port, outputfile, pipelineMode, dataDescription.GetPointer());
   Processor->AddPipeline(pipeline.GetPointer());
 
   return data;
@@ -156,6 +157,46 @@ void CatalystSetColorRange(void*, double low, double high)
   vtkPyFRPipeline* pipeline =
     vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
   pipeline->SetColorRange(low, high);
+}
+
+//----------------------------------------------------------------------------
+void CatalystSetFieldToContourBy(int field)
+{
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  pipeline->SetFieldToContourBy(field);
+}
+
+//----------------------------------------------------------------------------
+void CatalystSetSlicePlanes(float origin[3], float normal[3],
+                            int number, double spacing)
+{
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  pipeline->SetSlicePlanes(origin,normal,number,spacing);
+}
+
+//----------------------------------------------------------------------------
+void CatalystSetFieldToColorBy(int field)
+{
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  pipeline->SetFieldToColorBy(field);
 }
 
 //----------------------------------------------------------------------------

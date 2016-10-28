@@ -34,7 +34,6 @@ public:
   void SetColorPalette(int,double*);
   void SetColorPreset(int);
   void SetColorRange(FPType, FPType);
-  void SetCustomColorPalette(const uint8_t* rgba, const float* loc, size_t n);
 
 protected:
   vtkPyFRContourData();

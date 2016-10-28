@@ -30,7 +30,7 @@ int vtkPyFRContourFilter::PyFRDataTypesRegistered =
 vtkStandardNewMacro(vtkPyFRContourFilter);
 
 //----------------------------------------------------------------------------
-vtkPyFRContourFilter::vtkPyFRContourFilter() : ContourField(0)
+vtkPyFRContourFilter::vtkPyFRContourFilter()
 {
   this->ColorPaletteNeedsSyncing = false;
   this->ColorPalette = 1;
@@ -57,7 +57,7 @@ void vtkPyFRContourFilter::SetColorPalette(int palette)
 //----------------------------------------------------------------------------
 void vtkPyFRContourFilter::SetColorRange(double start, double end)
 {
-  if(start != this->ColorRange[0] && end != this->ColorRange[1])
+  if(start != this->ColorRange[0] || end != this->ColorRange[1])
   {
     this->Modified();
     this->ColorPaletteNeedsSyncing = true;
@@ -101,7 +101,9 @@ int vtkPyFRContourFilter::RequestData(
                                  output->GetData());
 
   std::pair<float,float> crange = filter.ColorRange();
+  std::cout << "Coloring contour with field: " << this->MappedField << std::endl;
   std::cout << "Contour color range is: " << ColorRange[0] << " to " << ColorRange[1] << std::endl;
+  std::cout << "Input contour color field range:" << crange.first << " to " << crange.second << std::endl;
 
   this->minmax = filter.DataRange();
   output->Modified();
@@ -132,8 +134,8 @@ void vtkPyFRContourFilter::SetContourValue(int i,double value)
     this->Modified();
     }
 }
-//----------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------
 void vtkPyFRContourFilter::SetContourField(int i)
 {
   if (this->ContourField != i)
@@ -142,14 +144,16 @@ void vtkPyFRContourFilter::SetContourField(int i)
     this->Modified();
     }
 }
-//----------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------
 void vtkPyFRContourFilter::SetMappedField(int i)
 {
   if (this->MappedField != i)
     {
+    std::cout << "vtkPyFRContourFilter Setting field to color by : " << i << std::endl;
     this->MappedField = i;
     this->Modified();
+    this->ColorPaletteNeedsSyncing = true;
     }
 }
 //----------------------------------------------------------------------------
