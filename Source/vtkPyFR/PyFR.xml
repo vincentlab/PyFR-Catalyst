@@ -256,7 +256,7 @@
         </BoundsDomain>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetNormal"
-                            default_values="1.0 0.0 0.0"
+                            default_values="0.0 1.0 0.0"
                             name="Normal"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />

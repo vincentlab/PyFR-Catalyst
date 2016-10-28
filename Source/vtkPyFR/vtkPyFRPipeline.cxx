@@ -136,7 +136,6 @@ void vtkAddActor(vtkSmartPointer<Mapper> mapper,
 
 void vtkUpdateFilter(vtkSMSourceProxy* filter, double time)
 {
-  // std::cout << "filter: " << filter->GetClassName() << " update to time: " << time << std::endl;
   filter->UpdatePipeline(time);
 }
 
@@ -146,8 +145,10 @@ void vtkUpdateFilter(vtkSMSourceProxy* filter, double time)
 vtkStandardNewMacro(vtkPyFRPipeline);
 
 //----------------------------------------------------------------------------
-vtkPyFRPipeline::vtkPyFRPipeline() : InsituLink(NULL)
+vtkPyFRPipeline::vtkPyFRPipeline()
 {
+  this->WhichPipeline = 1;
+  this->InsituLink = NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -167,9 +168,10 @@ vtkPyFRPipeline::PyData(vtkCPDataDescription* desc) const {
 
 //----------------------------------------------------------------------------
 void vtkPyFRPipeline::Initialize(const char* hostName, int port, char* fileName,
-                                 vtkCPDataDescription* dataDescription)
+                                 int pipeline, vtkCPDataDescription* dataDescription)
 {
   this->FileName = std::string(fileName);
+  this->WhichPipeline = pipeline;
 
   vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
 
@@ -294,59 +296,11 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   controller->PostInitializeProxy(gradients);
   controller->RegisterPipelineProxy(gradients,"Gradients");
 
-#ifdef USE_CLIP
-  // Add the clip filter
-  this->Clip.TakeReference(
-    vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
-                                   NewProxy("filters",
-                                            "PyFRCrinkleClipFilter")));
-  controller->PreInitializeProxy(this->Clip);
-  vtkSMPropertyHelper(this->Clip, "Input").Set(gradients, 0);
-  this->Clip->UpdateVTKObjects();
-  this->controller->PostInitializeProxy(this->Clip);
-  this->controller->RegisterPipelineProxy(this->Clip,"Clip");
-#endif
+  //Add the components of PipelineMode1
+  this->InitPipeline1(gradients, dataDescription );
 
-  // Add the slice filter
-  this->Slice.TakeReference(
-    vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
-                                   NewProxy("filters",
-                                            "PyFRParallelSliceFilter")));
-  this->controller->PreInitializeProxy(this->Slice);
-  vtkSMPropertyHelper(this->Slice, "Input").Set(gradients, 0);
-  vtkSMPropertyHelper(this->Slice,"ColorField").Set(0);
-  this->Slice->UpdateVTKObjects();
-  this->controller->PostInitializeProxy(this->Slice);
-  this->controller->RegisterPipelineProxy(this->Slice,"Slice");
-
-  // Add the contour filter
-  this->Contour.TakeReference(
-    vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
-                                   NewProxy("filters",
-                                            "PyFRContourFilter")));
-  vtkSMInputProperty* contourInputConnection =
-    vtkSMInputProperty::SafeDownCast(this->Contour->GetProperty("Input"));
-
-  this->controller->PreInitializeProxy(this->Contour);
-#ifdef USE_CLIP
-  vtkSMPropertyHelper(this->Contour, "Input").Set(this->Clip, 0);
-#else
-  // ignore the clip filter, use input directly.
-  vtkSMPropertyHelper(this->Contour, "Input").Set(gradients, 0);
-#endif
-  vtkSMPropertyHelper(this->Contour,"ContourField").Set(0);
-  vtkSMPropertyHelper(this->Contour,"ColorField").Set(8);
-
-  // Set up the isovalues to use.
-  const PyFRData* dta = pyfrData->GetData();
-  const std::vector<float> isovalues = dta->isovalues();
-  for(size_t i=0; i < isovalues.size(); ++i) {
-    root(printf("[catalyst] setting isovalue %zu: %g\n", i, isovalues[i]));
-    vtkSMPropertyHelper(this->Contour, "ContourValues").Set(i, isovalues[i]);
-  }
-  this->Contour->UpdateVTKObjects();
-  this->controller->PostInitializeProxy(this->Contour);
-  this->controller->RegisterPipelineProxy(this->Contour,"Contour");
+  //Add the components of PipelineMode2
+  this->InitPipeline2(gradients, dataDescription);
 
   // Create a view
   vtkSmartPointer<vtkSMViewProxy> polydataViewer;
@@ -357,57 +311,19 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   this->controller->RegisterViewProxy(polydataViewer);
 
   // Show the results.
-  this->ContourMapper = vtkSmartPointer<vtkPyFRMapper>::New();
-  this->SliceMapper = vtkSmartPointer<vtkPyFRMapper>::New();
-  vtkAddActor(this->ContourMapper, this->Contour, polydataViewer);
-  //vtkAddActor(this->SliceMapper, this->Slice, polydataViewer);
+  this->ActiveMapper = vtkSmartPointer<vtkPyFRMapper>::New();
+  if(this->WhichPipeline == 1)
+    {
+    vtkAddActor(this->ActiveMapper, this->Contour, polydataViewer);
+    }
+  else if(this->WhichPipeline == 2)
+    {
+    vtkAddActor(this->ActiveMapper, this->Slice, polydataViewer);
+    }
 
   if (postFilterWrite)
     {
-    // Create a converter to convert the pyfr contour data into polydata
-    vtkSmartPointer<vtkSMSourceProxy> pyfrContourDataConverter;
-    pyfrContourDataConverter.TakeReference(
-      vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
-                                     NewProxy("filters",
-                                              "PyFRContourDataConverter")));
-    vtkSMInputProperty* pyfrContourDataConverterInputConnection =
-      vtkSMInputProperty::SafeDownCast(pyfrContourDataConverter->
-                                       GetProperty("Input"));
-
-    pyfrContourDataConverterInputConnection->SetInputConnection(0, this->Contour, 0);
-    pyfrContourDataConverter->UpdatePropertyInformation();
-    pyfrContourDataConverter->UpdateVTKObjects();
-    this->controller->InitializeProxy(pyfrContourDataConverter);
-    this->controller->RegisterPipelineProxy(pyfrContourDataConverter,
-                                            "ConvertContoursToPolyData");
-
-    // Create the polydata writer, set the filename and then update the pipeline
-    vtkSmartPointer<vtkSMWriterProxy> polydataWriter;
-    polydataWriter.TakeReference(
-      vtkSMWriterProxy::SafeDownCast(sessionProxyManager->
-                                     NewProxy("writers", "XMLPolyDataWriter")));
-    vtkSMInputProperty* polydataWriterInputConnection =
-      vtkSMInputProperty::SafeDownCast(polydataWriter->GetProperty("Input"));
-    polydataWriterInputConnection->SetInputConnection(0,
-                                                      pyfrContourDataConverter,
-                                                      0);
-    vtkSMStringVectorProperty* polydataFileName =
-      vtkSMStringVectorProperty::SafeDownCast(polydataWriter->
-                                              GetProperty("FileName"));
-
-      {
-      std::ostringstream o;
-      o << this->FileName.substr(0,this->FileName.find_last_of("."));
-      o << "_"<<std::fixed<<std::setprecision(3)<<dataDescription->GetTime();
-      o << ".vtp";
-      polydataFileName->SetElement(0, o.str().c_str());
-      }
-
-      polydataWriter->UpdatePropertyInformation();
-      polydataWriter->UpdateVTKObjects();
-      polydataWriter->UpdatePipeline();
-      this->controller->InitializeProxy(polydataWriter);
-      this->controller->RegisterPipelineProxy(polydataWriter,"polydataWriter");
+    this->DumpToFile(dataDescription);
     }
 
   const bool plane = false;
@@ -439,25 +355,158 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     {
     std::ostringstream o;
     o << dataDescription->GetTime()<<" s";
-    // o << dataDescription->GetTimeStep();
     this->Timestamp->SetInput(o.str().c_str());
     }
   this->Timestamp->GetTextProperty()->SetBackgroundColor(0.,0.,0.);
   this->Timestamp->GetTextProperty()->SetBackgroundOpacity(1);
 
   // Add the actors to the renderer, set the background and size
-    {
-    vtkSMRenderViewProxy* rview = vtkSMRenderViewProxy::SafeDownCast(polydataViewer);
+  {
+  vtkSMRenderViewProxy* rview = vtkSMRenderViewProxy::SafeDownCast(polydataViewer);
 
-    vtkRenderer* ren = rview->GetRenderer();
-    ren->AddActor2D(this->Timestamp);
-    rview->UpdateVTKObjects();
-    }
+  vtkRenderer* ren = rview->GetRenderer();
+  ren->AddActor2D(this->Timestamp);
+  rview->UpdateVTKObjects();
+  }
 
   // Initialize the "link"
   this->InsituLink->InsituInitialize(vtkSMProxyManager::GetProxyManager()->
                                      GetActiveSessionProxyManager());
   this->SetSpecularLighting(0.8,50);
+
+}
+
+//----------------------------------------------------------------------------
+void vtkPyFRPipeline::InitPipeline1(vtkSmartPointer<vtkSMSourceProxy> input,
+                                    vtkCPDataDescription* dataDescription)
+{
+  vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
+  // Grab the active session proxy manager
+  vtkSMSessionProxyManager* sessionProxyManager =
+    proxyManager->GetActiveSessionProxyManager();
+
+  // Grab the data object from the data description
+  vtkPyFRData* pyfrData =
+    vtkPyFRData::SafeDownCast(dataDescription->
+                              GetInputDescriptionByName("input")->GetGrid());
+
+#ifdef USE_CLIP
+  // Add the clip filter
+  this->Clip.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
+                                   NewProxy("filters",
+                                            "PyFRCrinkleClipFilter")));
+  controller->PreInitializeProxy(this->Clip);
+  vtkSMPropertyHelper(this->Clip, "Input").Set(input, 0);
+  this->Clip->UpdateVTKObjects();
+  this->controller->PostInitializeProxy(this->Clip);
+  this->controller->RegisterPipelineProxy(this->Clip,"Clip");
+#endif
+
+  // Add the contour filter
+  this->Contour.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
+                                   NewProxy("filters",
+                                            "PyFRContourFilter")));
+  vtkSMInputProperty* contourInputConnection =
+    vtkSMInputProperty::SafeDownCast(this->Contour->GetProperty("Input"));
+
+  this->controller->PreInitializeProxy(this->Contour);
+#ifdef USE_CLIP
+  vtkSMPropertyHelper(this->Contour, "Input").Set(this->Clip, 0);
+#else
+  // ignore the clip filter, use input directly.
+  vtkSMPropertyHelper(this->Contour, "Input").Set(input, 0);
+#endif
+  vtkSMPropertyHelper(this->Contour,"ContourField").Set(0);
+  vtkSMPropertyHelper(this->Contour,"ColorField").Set(8);
+
+  // Set up the isovalues to use.
+  const std::vector<float> isovalues = pyfrData->GetData()->isovalues();
+  for(size_t i=0; i < isovalues.size(); ++i) {
+    root(printf("[catalyst] setting isovalue %zu: %g\n", i, isovalues[i]));
+    vtkSMPropertyHelper(this->Contour, "ContourValues").Set(i, isovalues[i]);
+  }
+  this->Contour->UpdateVTKObjects();
+  this->controller->PostInitializeProxy(this->Contour);
+  this->controller->RegisterPipelineProxy(this->Contour,"Contour");
+}
+
+//----------------------------------------------------------------------------
+void vtkPyFRPipeline::InitPipeline2(vtkSmartPointer<vtkSMSourceProxy> input,
+                                    vtkCPDataDescription*)
+{
+  vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
+  // Grab the active session proxy manager
+  vtkSMSessionProxyManager* sessionProxyManager =
+    proxyManager->GetActiveSessionProxyManager();
+
+  // Add the slice filter
+  this->Slice.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
+                                   NewProxy("filters",
+                                            "PyFRParallelSliceFilter")));
+  this->controller->PreInitializeProxy(this->Slice);
+  vtkSMPropertyHelper(this->Slice, "Input").Set(input, 0);
+  vtkSMPropertyHelper(this->Slice,"ColorField").Set(0);
+  this->Slice->UpdateVTKObjects();
+  this->controller->PostInitializeProxy(this->Slice);
+  this->controller->RegisterPipelineProxy(this->Slice,"Slice");
+
+}
+
+//----------------------------------------------------------------------------
+void vtkPyFRPipeline::DumpToFile(vtkCPDataDescription* dataDescription)
+{
+  vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
+  // Grab the active session proxy manager
+  vtkSMSessionProxyManager* sessionProxyManager =
+    proxyManager->GetActiveSessionProxyManager();
+
+  // Create a converter to convert the pyfr contour data into polydata
+  vtkSmartPointer<vtkSMSourceProxy> pyfrContourDataConverter;
+  pyfrContourDataConverter.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
+                                   NewProxy("filters",
+                                            "PyFRContourDataConverter")));
+  vtkSMInputProperty* pyfrContourDataConverterInputConnection =
+    vtkSMInputProperty::SafeDownCast(pyfrContourDataConverter->
+                                     GetProperty("Input"));
+
+  pyfrContourDataConverterInputConnection->SetInputConnection(0, this->Contour, 0);
+  pyfrContourDataConverter->UpdatePropertyInformation();
+  pyfrContourDataConverter->UpdateVTKObjects();
+  this->controller->InitializeProxy(pyfrContourDataConverter);
+  this->controller->RegisterPipelineProxy(pyfrContourDataConverter,
+                                          "ConvertContoursToPolyData");
+
+  // Create the polydata writer, set the filename and then update the pipeline
+  vtkSmartPointer<vtkSMWriterProxy> polydataWriter;
+  polydataWriter.TakeReference(
+    vtkSMWriterProxy::SafeDownCast(sessionProxyManager->
+                                   NewProxy("writers", "XMLPolyDataWriter")));
+  vtkSMInputProperty* polydataWriterInputConnection =
+    vtkSMInputProperty::SafeDownCast(polydataWriter->GetProperty("Input"));
+  polydataWriterInputConnection->SetInputConnection(0,
+                                                    pyfrContourDataConverter,
+                                                    0);
+  vtkSMStringVectorProperty* polydataFileName =
+    vtkSMStringVectorProperty::SafeDownCast(polydataWriter->
+                                            GetProperty("FileName"));
+
+    {
+    std::ostringstream o;
+    o << this->FileName.substr(0,this->FileName.find_last_of("."));
+    o << "_"<<std::fixed<<std::setprecision(3)<<dataDescription->GetTime();
+    o << ".vtp";
+    polydataFileName->SetElement(0, o.str().c_str());
+    }
+
+    polydataWriter->UpdatePropertyInformation();
+    polydataWriter->UpdateVTKObjects();
+    polydataWriter->UpdatePipeline();
+    this->controller->InitializeProxy(polydataWriter);
+    this->controller->RegisterPipelineProxy(polydataWriter,"polydataWriter");
 }
 
 //----------------------------------------------------------------------------
@@ -527,7 +576,7 @@ void vtkPyFRPipeline::SetSpecularLighting(float coefficient, float power)
 }
 
 void fillRuntimeVectors(const uint8_t* rgba, const float* loc, size_t n);
-
+//----------------------------------------------------------------------------
 void vtkPyFRPipeline::SetColorTable(const uint8_t* rgba, const float* loc,
                                     size_t n)
 {
@@ -538,6 +587,7 @@ void vtkPyFRPipeline::SetColorTable(const uint8_t* rgba, const float* loc,
   filt->SetColorPalette(-1);
 }
 
+//----------------------------------------------------------------------------
 void vtkPyFRPipeline::SetColorRange(FPType low, FPType high)
 {
   vtkObjectBase* obj = this->Contour->GetClientSideObject();
@@ -546,6 +596,7 @@ void vtkPyFRPipeline::SetColorRange(FPType low, FPType high)
   filt->SetColorRange(low,high);
 }
 
+//----------------------------------------------------------------------------
 void vtkPyFRPipeline::SetFieldToContourBy(int field)
 {
   if(this->Contour)
@@ -556,6 +607,7 @@ void vtkPyFRPipeline::SetFieldToContourBy(int field)
   }
 }
 
+//----------------------------------------------------------------------------
 void vtkPyFRPipeline::SetFieldToColorBy(int field)
 {
   if(this->Contour)
@@ -595,7 +647,6 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     {
     std::ostringstream o;
     o << dataDescription->GetTime()<<" s";
-    // o << dataDescription->GetTimeStep();
     this->Timestamp->SetInput(o.str().c_str());
     }
 
@@ -648,7 +699,7 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     vtkUpdateFilter(this->Contour, dataDescription->GetTime());
     vtkUpdateFilter(this->Slice, dataDescription->GetTime());
     if(this->PyData(dataDescription)->PrintMetadata()) {
-        double* bds = this->ContourMapper->GetBounds();
+        double* bds = this->ActiveMapper->GetBounds();
         reduce(&bds[0], 1, vtkCommunicator::MIN_OP);
         reduce(&bds[1], 1, vtkCommunicator::MAX_OP);
         reduce(&bds[2], 1, vtkCommunicator::MIN_OP);

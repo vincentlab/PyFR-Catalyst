@@ -39,7 +39,8 @@ namespace
   } while(0)
 
 //----------------------------------------------------------------------------
-void* CatalystInitialize(char* hostName, int pyport, char* outputfile, void* p)
+void* CatalystInitialize(char* hostName, int pyport, char* outputfile,
+                         int pipelineMode, void* p)
 {
   vtkPyFRData* data = vtkPyFRData::New();
   data->GetData()->Init(p);
@@ -75,7 +76,7 @@ void* CatalystInitialize(char* hostName, int pyport, char* outputfile, void* p)
   dataDescription->GetInputDescriptionByName("input")->SetGrid(data);
 
   vtkNew<vtkPyFRPipeline> pipeline;
-  pipeline->Initialize(host, port, outputfile, dataDescription.GetPointer());
+  pipeline->Initialize(host, port, outputfile, pipelineMode, dataDescription.GetPointer());
   Processor->AddPipeline(pipeline.GetPointer());
 
   return data;

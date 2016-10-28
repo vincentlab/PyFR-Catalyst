@@ -23,8 +23,10 @@ public:
   vtkTypeMacro(vtkPyFRPipeline,vtkCPPipeline)
   virtual void PrintSelf(ostream& os, vtkIndent indent);
 
+  //pipelineMode 1=contour
+  //pipelineMode 2=slice
   virtual void Initialize(const char* hostName, int port, char* fileName,
-                          vtkCPDataDescription* dataDescription);
+                          int pipeline, vtkCPDataDescription* dataDescription);
 
   virtual int RequestDataDescription(vtkCPDataDescription* dataDescription);
 
@@ -47,6 +49,12 @@ protected:
 
   const PyFRData* PyData(vtkCPDataDescription*) const;
 
+  void InitPipeline1(vtkSmartPointer<vtkSMSourceProxy> input,
+                     vtkCPDataDescription* dataDescription);
+  void InitPipeline2(vtkSmartPointer<vtkSMSourceProxy> input,
+                     vtkCPDataDescription* dataDescription);
+  void DumpToFile(vtkCPDataDescription* dataDescription);
+
 private:
   vtkPyFRPipeline(const vtkPyFRPipeline&); // Not implemented
   void operator=(const vtkPyFRPipeline&); // Not implemented
@@ -54,13 +62,13 @@ private:
   vtkLiveInsituLink* InsituLink;
 
   std::string FileName;
+  int WhichPipeline;
 
   vtkSmartPointer<vtkSMSourceProxy> Clip;
   vtkSmartPointer<vtkSMSourceProxy> Contour;
   vtkSmartPointer<vtkSMSourceProxy> Slice;
 
-  vtkSmartPointer<vtkPyFRMapper> ContourMapper;
-  vtkSmartPointer<vtkPyFRMapper> SliceMapper;
+  vtkSmartPointer<vtkPyFRMapper> ActiveMapper;
 
   vtkSmartPointer<vtkTextActor> Timestamp;
 

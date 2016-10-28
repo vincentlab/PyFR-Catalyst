@@ -5,7 +5,10 @@
 extern "C"
 {
 #endif
-  void* CatalystInitialize(char* hostName, int port, char* outputfile, void* p);
+
+  //pipeline 1=contour
+  //pipeline 2=slice
+  void* CatalystInitialize(char* hostName, int port, char* outputfile, int pipeline, void* p);
 
   void CatalystFinalize(void* p);
 
