@@ -86,6 +86,9 @@ public:
   unsigned image_size[2];
   ///@}
 
+  /// prefix to prepend to filenames
+  std::string fnprefix;
+
 private:
   static std::map<int,std::string> fieldName;
   static std::map<std::string,int> fieldIndex;

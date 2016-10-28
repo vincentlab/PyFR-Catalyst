@@ -35,12 +35,15 @@ public:
 
   // Returns the min/max of the scalar we are computing the isosurface on.  Not
   // valid until operator() is applied.
-  std::pair<float,float> Range() const;
+  const std::pair<FPType,FPType>& DataRange() const { return this->data_minmax; }
+
+  const std::pair<FPType,FPType>& ColorRange() const { return this->color_minmax; }
 
 protected:
   IsosurfaceFilter isosurfaceFilter;
   std::vector<FPType> ContourValues;
   int ContourField;
-  FPType minmax[2];
+  std::pair<FPType,FPType> data_minmax;
+  std::pair<FPType,FPType> color_minmax;
 };
 #endif

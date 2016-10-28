@@ -84,8 +84,6 @@ void PyFRParallelSliceFilter::operator()(PyFRData* input,
                        dataArray,
                        verticesVec,
                        normalsVec);
-
-  std::cout << "time to slice: " << timer.GetElapsedTime() << std::endl;
 }
 
 //----------------------------------------------------------------------------

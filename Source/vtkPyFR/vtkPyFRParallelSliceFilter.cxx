@@ -37,6 +37,8 @@ vtkPyFRParallelSliceFilter::vtkPyFRParallelSliceFilter() : Spacing(1.),
   this->Origin[0] = this->Origin[1] = this->Origin[2] = 0.;
   this->Normal[1] = this->Normal[2] = 0.;
   this->Normal[0] = 1.;
+
+  this->ColorPaletteNeedsSyncing = false;
   this->ColorPalette = 0;
   this->ColorRange[0] = 0.;
   this->ColorRange[1] = 1.;
@@ -47,6 +49,29 @@ vtkPyFRParallelSliceFilter::vtkPyFRParallelSliceFilter() : Spacing(1.),
 vtkPyFRParallelSliceFilter::~vtkPyFRParallelSliceFilter()
 {
   delete this->Filter;
+}
+
+//----------------------------------------------------------------------------
+void vtkPyFRParallelSliceFilter::SetColorPalette(int palette)
+{
+  if(palette != this->ColorPalette)
+  {
+    this->Modified();
+    this->ColorPaletteNeedsSyncing = true;
+    this->ColorPalette = palette;
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkPyFRParallelSliceFilter::SetColorRange(double start, double end)
+{
+  if(start != this->ColorRange[0] && end != this->ColorRange[1])
+  {
+    this->Modified();
+    this->ColorPaletteNeedsSyncing = true;
+    this->ColorRange[0] = start;
+    this->ColorRange[1] = end;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -74,7 +99,13 @@ int vtkPyFRParallelSliceFilter::RequestData(
     Filter->SetNumberOfPlanes(this->NumberOfPlanes);
     Filter->operator()(input->GetData(),output->GetData());
     }
-  output->SetColorPalette(this->ColorPalette,this->ColorRange);
+
+  if(this->ColorPaletteNeedsSyncing)
+    {
+    output->SetColorPalette(this->ColorPalette,this->ColorRange);
+    this->ColorPaletteNeedsSyncing = false;
+    }
+
   Filter->MapFieldOntoSlices(this->MappedField,input->GetData(),
                              output->GetData());
   output->Modified();

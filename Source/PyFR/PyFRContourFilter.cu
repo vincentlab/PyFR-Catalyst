@@ -30,12 +30,16 @@ public:
     }
   };
 
-  template<typename T> void
-  Run(PyFRData::ScalarDataArrayHandle array, T* mn, T* mx) {
+  template<typename HandleType>
+  std::pair<FPType,FPType>
+  Run(const HandleType& array) {
     typedef typename vtkm::cont::DeviceAdapterAlgorithm<DeviceAdapter>
       DeviceAlgorithms;
-    *mn = DeviceAlgorithms::Reduce(array, T(FLT_MAX), minFunctor<T>());
-    *mx = DeviceAlgorithms::Reduce(array, T(FLT_MIN), maxFunctor<T>());
+
+    std::pair<FPType,FPType> result;
+    result.first = DeviceAlgorithms::Reduce(array, FPType(FLT_MAX), minFunctor<FPType>());
+    result.second = DeviceAlgorithms::Reduce(array, FPType(FLT_MIN), maxFunctor<FPType>());
+    return result;
   }
 };
 
@@ -48,8 +52,10 @@ struct ContourFilterCellSets
 //----------------------------------------------------------------------------
 PyFRContourFilter::PyFRContourFilter() : ContourField(0)
 {
-  minmax[0] = FLT_MIN;
-  minmax[1] = FLT_MAX;
+  data_minmax.first = FLT_MAX;
+  data_minmax.second = FLT_MIN;
+  color_minmax.first = FLT_MAX;
+  color_minmax.second = FLT_MIN;
 }
 
 //----------------------------------------------------------------------------
@@ -72,9 +78,9 @@ void PyFRContourFilter::operator()(PyFRData* input,
     .CastToArrayHandle(PyFRData::ScalarDataArrayHandle::ValueType(),
                        PyFRData::ScalarDataArrayHandle::StorageTag());
 
-  // compute the range, client can query later via ::Range().
-  tjfMinMax<vtkm::cont::DeviceAdapterTagCuda>().
-    Run(contourArray, &this->minmax[0], &this->minmax[1]);
+  //compute the range of the input field
+  tjfMinMax<vtkm::cont::DeviceAdapterTagCuda> tjfmm;
+  this->data_minmax = tjfmm.Run(contourArray);
 
   DataVec dataVec;
   Vec3HandleVec verticesVec;
@@ -95,14 +101,13 @@ void PyFRContourFilter::operator()(PyFRData* input,
     verticesVec,
     normalsVec
   );
-
-  std::cout << "time to contour: " << timer.GetElapsedTime() << std::endl;
 }
 //----------------------------------------------------------------------------
 void PyFRContourFilter::MapFieldOntoIsosurfaces(int field,
                                                 PyFRData* input,
                                                 PyFRContourData* output)
 {
+  std::cout << "Coloring contour with field: " << PyFRData::FieldName(field) << std::endl;
   typedef std::vector<PyFRContour::ScalarDataArrayHandle> ScalarDataHandleVec;
 
   const vtkm::cont::DataSet& dataSet = input->GetDataSet();
@@ -128,13 +133,11 @@ void PyFRContourFilter::MapFieldOntoIsosurfaces(int field,
   isosurfaceFilter.MapFieldOntoIsosurfaces(projectedArray,
                                            scalarDataHandleVec);
 
-  std::cout << "time to map onto contour: " << timer.GetElapsedTime() << std::endl;
-
+  //In theory we would want to iterate all the output triangles and determine
+  //the range from those triangles, it seems that we add random float values
+  //to some of the triangles. So instead we are going to use the input
+  //arrays data range.
+  tjfMinMax<vtkm::cont::DeviceAdapterTagCuda> tjfmm;
+  this->color_minmax = tjfmm.Run(projectedArray);
 }
 
-std::pair<float,float> PyFRContourFilter::Range() const {
-  std::pair<float,float> mm;
-  mm.first = this->minmax[0];
-  mm.second = this->minmax[1];
-  return mm;
-}

@@ -136,7 +136,7 @@ void vtkAddActor(vtkSmartPointer<Mapper> mapper,
 
 void vtkUpdateFilter(vtkSMSourceProxy* filter, double time)
 {
-  std::cout << "filter: " << filter->GetClassName() << " update to time: " << time << std::endl;
+  // std::cout << "filter: " << filter->GetClassName() << " update to time: " << time << std::endl;
   filter->UpdatePipeline(time);
 }
 
@@ -315,8 +315,6 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   this->controller->PreInitializeProxy(this->Slice);
   vtkSMPropertyHelper(this->Slice, "Input").Set(gradients, 0);
   vtkSMPropertyHelper(this->Slice,"ColorField").Set(0);
-  double sliceColorRange[2] = {0.695,0.7385};
-  vtkSMPropertyHelper(this->Slice,"ColorRange").Set(sliceColorRange,2);
   this->Slice->UpdateVTKObjects();
   this->controller->PostInitializeProxy(this->Slice);
   this->controller->RegisterPipelineProxy(this->Slice,"Slice");
@@ -346,12 +344,6 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     root(printf("[catalyst] setting isovalue %zu: %g\n", i, isovalues[i]));
     vtkSMPropertyHelper(this->Contour, "ContourValues").Set(i, isovalues[i]);
   }
-  auto mm = std::minmax_element(isovalues.begin(), isovalues.end());
-  const double mm_isocol[2] = {*mm.first-1.0, *mm.second+1.0};
-  root(printf("[catalyst] contour color range: %g--%g.\n", mm_isocol[0],
-              mm_isocol[1]));
-  vtkSMPropertyHelper(this->Contour, "ColorRange").Set(mm_isocol, 2);
-
   this->Contour->UpdateVTKObjects();
   this->controller->PostInitializeProxy(this->Contour);
   this->controller->RegisterPipelineProxy(this->Contour,"Contour");
@@ -465,6 +457,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   // Initialize the "link"
   this->InsituLink->InsituInitialize(vtkSMProxyManager::GetProxyManager()->
                                      GetActiveSessionProxyManager());
+  this->SetSpecularLighting(0.8,50);
 }
 
 //----------------------------------------------------------------------------
@@ -696,13 +689,13 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
 
       const int magnification = 1;
       const int quality = 100;
-      char fname[32] = {0};
+      char fname[128] = {0};
       if(nviews > 1)
         {
-        snprintf(fname, 32, "ts%04ld-v%d.png",
+        snprintf(fname, 128, "%s%04ld-v%d.png", pyd->fnprefix.c_str(),
                  (long)dataDescription->GetTimeStep(), i);
         } else {
-        snprintf(fname, 32, "ts%04ld.png",
+        snprintf(fname, 128, "%s%04ld.png", pyd->fnprefix.c_str(),
                  (long)dataDescription->GetTimeStep());
         }
       this->controller->WriteImage(viewProxy, fname, magnification, quality);

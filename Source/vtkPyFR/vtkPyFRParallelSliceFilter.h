@@ -34,10 +34,10 @@ public:
   vtkSetMacro(MappedField,int);
   vtkGetMacro(MappedField,int);
 
-  vtkSetMacro(ColorPalette,int);
+  void SetColorPalette(int);
   vtkGetMacro(ColorPalette,int);
 
-  vtkSetVector2Macro(ColorRange,double);
+  void SetColorRange(double, double);
   vtkGetVectorMacro(ColorRange,double,2);
 
 protected:
@@ -49,6 +49,8 @@ protected:
   double Spacing;
   int NumberOfPlanes;
   int MappedField;
+
+  bool ColorPaletteNeedsSyncing;
   int ColorPalette;
   double ColorRange[2];
 
