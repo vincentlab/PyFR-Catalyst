@@ -163,7 +163,7 @@ struct ComputeGradients : public vtkm::worklet::WorkletMapCellToPoint
         v_gradient[1] += temp[1];
         v_gradient[2] += temp[2];
 
-        velocity_t = this->GetVelocityUValues(topo);
+        velocity_t = this->GetVelocityVValues(topo);
         temp =
             vtkm::exec::CellDerivative(velocity_t, wcoords, pcoords,
                                        vtkm::CellShapeTagHexahedron(), *this);
@@ -172,7 +172,7 @@ struct ComputeGradients : public vtkm::worklet::WorkletMapCellToPoint
         v_gradient[4] += temp[1];
         v_gradient[5] += temp[2];
 
-        velocity_t = this->GetVelocityUValues(topo);
+        velocity_t = this->GetVelocityWValues(topo);
         temp =
             vtkm::exec::CellDerivative(velocity_t, wcoords, pcoords,
                                        vtkm::CellShapeTagHexahedron(), *this);
