@@ -151,10 +151,10 @@ void PyFRData::Init(void* data)
   this->dataSet.AddCoordinateSystem(vtkm::cont::CoordinateSystem("coordinates",
                                                                  1,vertices));
   this->dataSet.AddField(density);
+  this->dataSet.AddField(pressure);
   this->dataSet.AddField(velocity_u);
   this->dataSet.AddField(velocity_v);
   this->dataSet.AddField(velocity_w);
-  this->dataSet.AddField(pressure);
   this->dataSet.AddCellSet(cset);
 }
 

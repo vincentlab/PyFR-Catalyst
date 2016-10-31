@@ -401,11 +401,11 @@ public:
 
     //We need to compute the gradient of all the data.
     vtkm::cont::CoordinateSystem coordField = input.GetCoordinateSystem();
-    vtkm::cont::Field densityField = input.GetField(PyFRData::FieldName(0));
-    vtkm::cont::Field pressureField = input.GetField(PyFRData::FieldName(1));
-    vtkm::cont::Field veluField = input.GetField(PyFRData::FieldName(2));
-    vtkm::cont::Field velvField = input.GetField(PyFRData::FieldName(3));
-    vtkm::cont::Field velwField = input.GetField(PyFRData::FieldName(4));
+    vtkm::cont::Field densityField = input.GetField("density");
+    vtkm::cont::Field pressureField = input.GetField("pressure");
+    vtkm::cont::Field veluField = input.GetField("velocity_u");
+    vtkm::cont::Field velvField = input.GetField("velocity_v");
+    vtkm::cont::Field velwField = input.GetField("velocity_w");
 
     PyFRData::Vec3ArrayHandle coords = make_Vec3Handle(coordField);
     PyFRData::ScalarDataArrayHandle density = make_ScalarHandle(densityField);
