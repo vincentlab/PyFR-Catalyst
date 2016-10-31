@@ -106,6 +106,10 @@ struct ComputeGradients : public vtkm::worklet::WorkletMapCellToPoint
     // if this point is not used we don't need to compute anything
     if (numCells == 0)
     {
+      d_gradient_mag = 0;
+      p_gradient_mag = 0;
+      v_gradient_mag = 0;
+      qcriterion = 0;
       return;
     }
 
