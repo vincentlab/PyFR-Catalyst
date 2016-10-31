@@ -582,18 +582,37 @@ void vtkPyFRPipeline::SetColorTable(const uint8_t* rgba, const float* loc,
 {
   fillRuntimeVectors(rgba, loc, n);
   // -1 is ColorTable::RUNTIME; we can't include that header.
-  vtkObjectBase* obj = this->Contour->GetClientSideObject();
-  vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
-  filt->SetColorPalette(-1);
+
+  if(this->Contour)
+  {
+    vtkObjectBase* obj = this->Contour->GetClientSideObject();
+    vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
+    filt->SetColorPalette(-1);
+  }
+
+  if(this->Slice)
+  {
+    vtkObjectBase* obj = this->Slice->GetClientSideObject();
+    vtkPyFRParallelSliceFilter* filt = vtkPyFRParallelSliceFilter::SafeDownCast(obj);
+    filt->SetColorPalette(-1);
+  }
 }
 
 //----------------------------------------------------------------------------
 void vtkPyFRPipeline::SetColorRange(FPType low, FPType high)
 {
-  vtkObjectBase* obj = this->Contour->GetClientSideObject();
-  vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
-
-  filt->SetColorRange(low,high);
+  if(this->Contour)
+  {
+    vtkObjectBase* obj = this->Contour->GetClientSideObject();
+    vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
+    filt->SetColorRange(low,high);
+  }
+  if(this->Slice)
+  {
+    vtkObjectBase* obj = this->Slice->GetClientSideObject();
+    vtkPyFRParallelSliceFilter* filt = vtkPyFRParallelSliceFilter::SafeDownCast(obj);
+    filt->SetColorRange(low,high);
+  }
 }
 
 //----------------------------------------------------------------------------
