@@ -37,10 +37,11 @@ extern "C"
   //2 = "velocity_u";
   //3 = "velocity_v";
   //4 = "velocity_w";
-  //5 = "density_gradient_magnitude";
-  //6 = "pressure_gradient_magnitude";
-  //7 = "velocity_gradient_magnitude";
-  //8 = "velocity_qcriterion";
+  //5 = "velocity_magnitude";
+  //6 = "density_gradient_magnitude";
+  //7 = "pressure_gradient_magnitude";
+  //8 = "velocity_gradient_magnitude";
+  //9 = "velocity_qcriterion";
   //
   void CatalystSetFieldToContourBy(int field);
 
