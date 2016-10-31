@@ -19,7 +19,37 @@
 #include <vtkm/cont/Field.h>
 #include <vtkm/cont/cuda/DeviceAdapterCuda.h>
 
+#include <vtkm/VectorAnalysis.h>
+#include <vtkm/worklet/WorkletMapField.h>
+#include <vtkm/worklet/DispatcherMapField.h>
+
 #include "ArrayHandleExposed.h"
+
+namespace vtkm {
+namespace worklet {
+
+struct ComputeMagnitude : public vtkm::worklet::WorkletMapField
+{
+  typedef void ControlSignature(
+                                FieldIn<Scalar> u,
+                                FieldIn<Scalar> v,
+                                FieldIn<Scalar> w,
+                                FieldOut<Scalar> mag
+                                );
+  typedef void ExecutionSignature(_1, _2, _3, _4);
+
+  template<typename T>
+  VTKM_EXEC_EXPORT void operator()(const T& u,
+                                   const T& v,
+                                   const T& w,
+                                   T& mag) const
+  {
+    mag = vtkm::Magnitude(vtkm::make_Vec(u,v,w));
+  }
+};
+
+}
+}
 
 //------------------------------------------------------------------------------
 std::map<int,std::string> PyFRData::fieldName;
@@ -34,12 +64,13 @@ bool PyFRData::PopulateMaps()
   fieldName[2] = "velocity_u";
   fieldName[3] = "velocity_v";
   fieldName[4] = "velocity_w";
-  fieldName[5] = "density_gradient_magnitude";
-  fieldName[6] = "pressure_gradient_magnitude";
-  fieldName[7] = "velocity_gradient_magnitude";
-  fieldName[8] = "velocity_qcriterion";
+  fieldName[5] = "velocity_magnitude";
+  fieldName[6] = "density_gradient_magnitude";
+  fieldName[7] = "pressure_gradient_magnitude";
+  fieldName[8] = "velocity_gradient_magnitude";
+  fieldName[9] = "velocity_qcriterion";
 
-  for (unsigned i=0;i<9;i++)
+  for (unsigned i=0;i<10;i++)
     fieldIndex[fieldName[i]] = i;
 
   return true;
@@ -141,26 +172,70 @@ void PyFRData::Init(void* data)
                                    meshData->nCells*meshData->nVerticesPerCell);
   CatalystMappedDataArrayHandle pressureArray(pressureIndexArray, rawSolutionArray);
 
+  //compute the magnitude of the velocity.
+  ScalarDataArrayHandle velocity_mArray;
+  vtkm::worklet::DispatcherMapField< vtkm::worklet::ComputeMagnitude, CudaTag > dispatcher;
+  dispatcher.Invoke(velocity_uArray, velocity_vArray, velocity_wArray, velocity_mArray);
+
   enum ElemType { CONSTANT=0, LINEAR=1, QUADRATIC=2 };
   vtkm::cont::Field density("density",LINEAR,vtkm::cont::Field::ASSOC_POINTS,vtkm::cont::DynamicArrayHandle(densityArray));
   vtkm::cont::Field velocity_u("velocity_u",LINEAR,vtkm::cont::Field::ASSOC_POINTS,vtkm::cont::DynamicArrayHandle(velocity_uArray));
   vtkm::cont::Field velocity_v("velocity_v",LINEAR,vtkm::cont::Field::ASSOC_POINTS,vtkm::cont::DynamicArrayHandle(velocity_vArray));
   vtkm::cont::Field velocity_w("velocity_w",LINEAR,vtkm::cont::Field::ASSOC_POINTS,vtkm::cont::DynamicArrayHandle(velocity_wArray));
+  vtkm::cont::Field velocity_m("velocity_magnitude",LINEAR,vtkm::cont::Field::ASSOC_POINTS,vtkm::cont::DynamicArrayHandle(velocity_mArray));
   vtkm::cont::Field pressure("pressure",LINEAR,vtkm::cont::Field::ASSOC_POINTS,vtkm::cont::DynamicArrayHandle(pressureArray));
 
   this->dataSet.AddCoordinateSystem(vtkm::cont::CoordinateSystem("coordinates",
                                                                  1,vertices));
+
   this->dataSet.AddField(density);
   this->dataSet.AddField(pressure);
   this->dataSet.AddField(velocity_u);
   this->dataSet.AddField(velocity_v);
   this->dataSet.AddField(velocity_w);
+  this->dataSet.AddField(velocity_m);
   this->dataSet.AddCellSet(cset);
+}
+
+namespace {
+
+PyFRData::CatalystMappedDataArrayHandle
+make_CatalystHandle(const vtkm::cont::Field& field)
+{
+  return field.GetData().CastToArrayHandle(
+    PyFRData::CatalystMappedDataArrayHandle::ValueType(),
+    PyFRData::CatalystMappedDataArrayHandle::StorageTag());
+}
+
+PyFRData::ScalarDataArrayHandle
+make_ScalarHandle(const vtkm::cont::Field& field)
+{
+  return field.GetData().CastToArrayHandle(
+      PyFRData::ScalarDataArrayHandle::ValueType(),
+      PyFRData::ScalarDataArrayHandle::StorageTag());
+}
+
 }
 
 //------------------------------------------------------------------------------
 void PyFRData::Update()
 {
+  typedef ::vtkm::cont::DeviceAdapterTagCuda CudaTag;
+
+  //compute the magnitude of the velocity.
+  vtkm::cont::Field veluField = this->dataSet.GetField("velocity_u");
+  vtkm::cont::Field velvField = this->dataSet.GetField("velocity_v");
+  vtkm::cont::Field velwField = this->dataSet.GetField("velocity_w");
+  vtkm::cont::Field velmField = this->dataSet.GetField("velocity_magnitude");
+
+  PyFRData::CatalystMappedDataArrayHandle velu = make_CatalystHandle(veluField);
+  PyFRData::CatalystMappedDataArrayHandle velv = make_CatalystHandle(velvField);
+  PyFRData::CatalystMappedDataArrayHandle velw = make_CatalystHandle(velwField);
+  PyFRData::ScalarDataArrayHandle velm = make_ScalarHandle(velmField);
+
+  vtkm::worklet::DispatcherMapField< vtkm::worklet::ComputeMagnitude, CudaTag > dispatcher;
+  dispatcher.Invoke(velu, velv, velw, velm);
+
 }
 
 bool PyFRData::PrintMetadata() const {
