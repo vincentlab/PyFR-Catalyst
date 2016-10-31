@@ -28,6 +28,31 @@
 namespace vtkm {
 namespace worklet {
 
+
+
+struct DeRho : public vtkm::worklet::WorkletMapField
+{
+  typedef void ControlSignature(
+                                FieldIn<Scalar> rho,
+                                FieldInOut<Scalar> u,
+                                FieldInOut<Scalar> v,
+                                FieldInOut<Scalar> w
+                                );
+  typedef void ExecutionSignature(_1, _2, _3, _4, WorkIndex);
+
+  template<typename T>
+  VTKM_EXEC_EXPORT void operator()(const T& rho,
+                                   T& u,
+                                   T& v,
+                                   T& w,
+                                   vtkm::Id index) const
+  {
+    u = u / rho;
+    v = v / rho;
+    w = w / rho;
+  }
+};
+
 struct ComputeMagnitude : public vtkm::worklet::WorkletMapField
 {
   typedef void ControlSignature(
@@ -36,13 +61,14 @@ struct ComputeMagnitude : public vtkm::worklet::WorkletMapField
                                 FieldIn<Scalar> w,
                                 FieldOut<Scalar> mag
                                 );
-  typedef void ExecutionSignature(_1, _2, _3, _4);
+  typedef void ExecutionSignature(_1, _2, _3, _4, WorkIndex);
 
   template<typename T>
   VTKM_EXEC_EXPORT void operator()(const T& u,
                                    const T& v,
                                    const T& w,
-                                   T& mag) const
+                                   T& mag,
+                                   vtkm::Id index) const
   {
     mag = vtkm::Magnitude(vtkm::make_Vec(u,v,w));
   }
@@ -172,6 +198,11 @@ void PyFRData::Init(void* data)
                                    meshData->nCells*meshData->nVerticesPerCell);
   CatalystMappedDataArrayHandle pressureArray(pressureIndexArray, rawSolutionArray);
 
+  //correct the velocity u,v,w arrays to be u,v,w instead of being
+  //u*rho, v*rho, w*rho. Note this is all done inplace
+  vtkm::worklet::DispatcherMapField< vtkm::worklet::DeRho, CudaTag > dispatchDeRho;
+  dispatchDeRho.Invoke(densityArray, velocity_uArray, velocity_vArray, velocity_wArray);
+
   //compute the magnitude of the velocity.
   ScalarDataArrayHandle velocity_mArray;
   vtkm::worklet::DispatcherMapField< vtkm::worklet::ComputeMagnitude, CudaTag > dispatcher;
@@ -222,17 +253,25 @@ void PyFRData::Update()
 {
   typedef ::vtkm::cont::DeviceAdapterTagCuda CudaTag;
 
-  //compute the magnitude of the velocity.
+
+  vtkm::cont::Field densField = this->dataSet.GetField("density");
   vtkm::cont::Field veluField = this->dataSet.GetField("velocity_u");
   vtkm::cont::Field velvField = this->dataSet.GetField("velocity_v");
   vtkm::cont::Field velwField = this->dataSet.GetField("velocity_w");
   vtkm::cont::Field velmField = this->dataSet.GetField("velocity_magnitude");
 
+  PyFRData::CatalystMappedDataArrayHandle dens = make_CatalystHandle(densField);
   PyFRData::CatalystMappedDataArrayHandle velu = make_CatalystHandle(veluField);
   PyFRData::CatalystMappedDataArrayHandle velv = make_CatalystHandle(velvField);
   PyFRData::CatalystMappedDataArrayHandle velw = make_CatalystHandle(velwField);
   PyFRData::ScalarDataArrayHandle velm = make_ScalarHandle(velmField);
 
+  //correct the velocity u,v,w arrays to be u,v,w instead of being
+  //u*rho, v*rho, w*rho. Note this is all done inplace
+  vtkm::worklet::DispatcherMapField< vtkm::worklet::DeRho, CudaTag > dispatchDeRho;
+  dispatchDeRho.Invoke(dens, velu, velv, velw);
+
+  //compute the magnitude of the velocity.
   vtkm::worklet::DispatcherMapField< vtkm::worklet::ComputeMagnitude, CudaTag > dispatcher;
   dispatcher.Invoke(velu, velv, velw, velm);
 
