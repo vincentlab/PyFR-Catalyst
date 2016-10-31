@@ -136,6 +136,7 @@ void vtkAddActor(vtkSmartPointer<Mapper> mapper,
 
 void vtkUpdateFilter(vtkSMSourceProxy* filter, double time)
 {
+  // std::cout << "filter: " << filter->GetClassName() << " update to time: " << time << std::endl;
   filter->UpdatePipeline(time);
 }
 
