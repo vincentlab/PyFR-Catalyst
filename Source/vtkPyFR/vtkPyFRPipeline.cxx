@@ -575,16 +575,16 @@ void vtkPyFRPipeline::SetSpecularLighting(float coefficient, float power)
     }
 }
 
-void fillRuntimeVectors(const uint8_t* rgba, const float* loc, size_t n);
+void fillRuntimeVectors(int pipeline, const uint8_t* rgba, const float* loc, size_t n);
 //----------------------------------------------------------------------------
 void vtkPyFRPipeline::SetColorTable(const uint8_t* rgba, const float* loc,
                                     size_t n)
 {
-  fillRuntimeVectors(rgba, loc, n);
   // -1 is ColorTable::RUNTIME; we can't include that header.
 
   if(this->Contour)
   {
+    fillRuntimeVectors(1, rgba, loc, n);
     vtkObjectBase* obj = this->Contour->GetClientSideObject();
     vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
     filt->SetColorPalette(-1);
@@ -592,6 +592,7 @@ void vtkPyFRPipeline::SetColorTable(const uint8_t* rgba, const float* loc,
 
   if(this->Slice)
   {
+    fillRuntimeVectors(2, rgba, loc, n);
     vtkObjectBase* obj = this->Slice->GetClientSideObject();
     vtkPyFRParallelSliceFilter* filt = vtkPyFRParallelSliceFilter::SafeDownCast(obj);
     filt->SetColorPalette(-1);

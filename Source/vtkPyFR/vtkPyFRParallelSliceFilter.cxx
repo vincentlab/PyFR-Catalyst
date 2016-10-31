@@ -102,7 +102,7 @@ int vtkPyFRParallelSliceFilter::RequestData(
 
   if(this->ColorPaletteNeedsSyncing)
     {
-    output->SetColorPalette(this->ColorPalette,this->ColorRange);
+    output->SetColorPalette(2, this->ColorPalette,this->ColorRange);
     this->ColorPaletteNeedsSyncing = false;
     }
 
@@ -112,16 +112,28 @@ int vtkPyFRParallelSliceFilter::RequestData(
 
   return 1;
 }
-//----------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------
+void vtkPyFRParallelSliceFilter::SetMappedField(int i)
+{
+  if (this->MappedField != i)
+    {
+    std::cout << "vtkPyFRParallelSliceFilter Setting field to color by : " << i << std::endl;
+    this->MappedField = i;
+    this->Modified();
+    this->ColorPaletteNeedsSyncing = true;
+    }
+}
+
+//----------------------------------------------------------------------------
 int vtkPyFRParallelSliceFilter::FillInputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPyFRData");
   return 1;
 }
-//----------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------
 void vtkPyFRParallelSliceFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

@@ -93,7 +93,7 @@ int vtkPyFRContourFilter::RequestData(
 
   if(this->ColorPaletteNeedsSyncing)
     {
-    output->SetColorPalette(this->ColorPalette,this->ColorRange);
+    output->SetColorPalette(1, this->ColorPalette,this->ColorRange);
     this->ColorPaletteNeedsSyncing = false;
     }
 

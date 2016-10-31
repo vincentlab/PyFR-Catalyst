@@ -31,7 +31,7 @@ public:
   vtkSetMacro(NumberOfPlanes,int);
   vtkGetMacro(NumberOfPlanes,int);
 
-  vtkSetMacro(MappedField,int);
+  void SetMappedField(int i);
   vtkGetMacro(MappedField,int);
 
   void SetColorPalette(int);

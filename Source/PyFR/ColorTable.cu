@@ -1,17 +1,17 @@
 
 #include "ColorTable.h"
 
-static ::thrust::system::cuda::vector< Color> PaletteVec;
-static ::thrust::system::cuda::vector< float> PivotsVec;
-static std::vector<Color> RuntimePalette;
-static std::vector<float> RuntimePivots;
+static ::thrust::system::cuda::vector< Color> PaletteVec[2];
+static ::thrust::system::cuda::vector< float> PivotsVec[2];
+static std::vector<Color> RuntimePalette[2];
+static std::vector<float> RuntimePivots[2];
 
-RuntimeColorTable::RuntimeColorTable(FPType cmin, FPType cmax,
-  const std::vector<Color>& palette,
-  const std::vector<float>& pivots)
+RuntimeColorTable::RuntimeColorTable(int pipeline, FPType cmin, FPType cmax,
+  const std::vector<Color>& palette, const std::vector<float>& pivots)
 {
   typedef ::vtkm::cont::DeviceAdapterTagCuda CudaTag;
 
+  this->WhichPipeline = pipeline;
   this->Min = cmin;
   this->Max = cmax;
 
@@ -25,14 +25,15 @@ RuntimeColorTable::RuntimeColorTable(FPType cmin, FPType cmax,
               this->Min + pivots[i]*(this->Max - this->Min);
   }
 
-  PaletteVec.resize(0);
-  PivotsVec.resize(0);
+  int p = pipeline -1;
+  PaletteVec[p].resize(0);
+  PivotsVec[p].resize(0);
 
-  PaletteVec.assign(palette.begin(), palette.end());
-  PivotsVec.assign(unnormalized_pivots.begin(), unnormalized_pivots.end());
+  PaletteVec[p].assign(palette.begin(), palette.end());
+  PivotsVec[p].assign(unnormalized_pivots.begin(), unnormalized_pivots.end());
 
-  this->Palette = (&PaletteVec[0]).get();
-  this->Pivots = (&PivotsVec[0]).get();
+  this->Palette = (&PaletteVec[p][0]).get();
+  this->Pivots = (&PivotsVec[p][0]).get();
 
   std::cout << "RuntimeColorTable being constructed. " << std::endl;
   std::cout << "RuntimeColorTable->Min: " << this->Min << std::endl;
@@ -53,25 +54,29 @@ RuntimeColorTable::RuntimeColorTable(FPType cmin, FPType cmax,
 
 void RuntimeColorTable::ReleaseResources()
 {
-  PaletteVec.resize(0); PaletteVec.shrink_to_fit();
-  PivotsVec.resize(0); PivotsVec.shrink_to_fit();
+  int p = this->WhichPipeline -1;
+  PaletteVec[p].resize(0); PaletteVec[p].shrink_to_fit();
+  PivotsVec[p].resize(0); PivotsVec[p].shrink_to_fit();
 }
 
-void fetchRuntimeVectors(std::vector<Color>& palette,
+void fetchRuntimeVectors(int pipeline,
+                         std::vector<Color>& palette,
                          std::vector<float>& pivots)
 {
-  palette = std::vector<Color>(RuntimePalette.begin(), RuntimePalette.end());
-  pivots = std::vector<float>(RuntimePivots.begin(), RuntimePivots.end());
+  int p = pipeline - 1;
+  palette = std::vector<Color>(RuntimePalette[p].begin(), RuntimePalette[p].end());
+  pivots = std::vector<float>(RuntimePivots[p].begin(), RuntimePivots[p].end());
 }
 
-void fillRuntimeVectors(const uint8_t* rgba, const float* loc, size_t n)
+void fillRuntimeVectors(int pipeline, const uint8_t* rgba, const float* loc, size_t n)
 {
-  RuntimePalette.resize(n);
-  RuntimePivots.resize(n);
+  int p = pipeline - 1;
+  RuntimePalette[p].resize(n);
+  RuntimePivots[p].resize(n);
 
   for(size_t i=0; i < n; ++i) {
-    RuntimePalette[i] = Color(rgba[i*4+0], rgba[i*4+1], rgba[i*4+2], rgba[i*4+3]);
-    RuntimePivots[i] = loc[i];
+    RuntimePalette[p][i] = Color(rgba[i*4+0], rgba[i*4+1], rgba[i*4+2], rgba[i*4+3]);
+    RuntimePivots[p][i] = loc[i];
   }
 }
 

@@ -53,6 +53,7 @@ public:
   FPType Min;
   FPType Max;
   vtkm::IdComponent NumberOfColors;
+  int WhichPipeline;
 
   Color* Palette;
   float* Pivots;
@@ -68,7 +69,8 @@ public:
   }
 
 
-  RuntimeColorTable(FPType cmin, FPType cmax,
+  RuntimeColorTable(int pipeline,
+                    FPType cmin, FPType cmax,
                     const std::vector<Color>& palette,
                     const std::vector<float>& pivots);
 
@@ -153,11 +155,12 @@ protected:
   }
 };
 
-void fetchRuntimeVectors(std::vector<Color>&, std::vector<float>&);
-void fillRuntimeVectors(const uint8_t* rgba, const float* loc, size_t n);
+void fetchRuntimeVectors(int pipeline, std::vector<Color>&, std::vector<float>&);
+void fillRuntimeVectors(int pipeline, const uint8_t* rgba, const float* loc, size_t n);
 
 static
-RuntimeColorTable make_ColorTable(ColorTable::Preset i,
+RuntimeColorTable make_ColorTable(int pipeline,
+                                  ColorTable::Preset i,
                                   FPType min, FPType max)
 {
   std::vector<Color> palette;
@@ -169,7 +172,7 @@ RuntimeColorTable make_ColorTable(ColorTable::Preset i,
     //1. ColorTable need to normalize the pivots after construction
     //based on the min & max
   case ColorTable::RUNTIME:
-    fetchRuntimeVectors(palette,pivots);
+    fetchRuntimeVectors(pipeline,palette,pivots);
     break;
   case ColorTable::COOLTOWARM:
     numColors = 3;
@@ -210,7 +213,7 @@ RuntimeColorTable make_ColorTable(ColorTable::Preset i,
     break;
   }
 
-  return RuntimeColorTable(min, max, palette, pivots);
+  return RuntimeColorTable(pipeline, min, max, palette, pivots);
 }
 
 #endif
