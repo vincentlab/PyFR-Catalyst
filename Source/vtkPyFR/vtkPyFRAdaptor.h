@@ -52,6 +52,7 @@ extern "C"
   //field to color the contour or slice by
   void CatalystSetFieldToColorBy(int field);
 
+
 #ifdef __cplusplus
 }
 #endif

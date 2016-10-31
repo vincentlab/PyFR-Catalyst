@@ -48,6 +48,15 @@ make_CatalystHandle(const vtkm::cont::Field& field)
     PyFRData::CatalystMappedDataArrayHandle::ValueType(),
     PyFRData::CatalystMappedDataArrayHandle::StorageTag());
 }
+
+PyFRData::ScalarDataArrayHandle
+make_ScalarHandle(const vtkm::cont::Field& field)
+{
+  return field.GetData().CastToArrayHandle(
+      PyFRData::ScalarDataArrayHandle::ValueType(),
+      PyFRData::ScalarDataArrayHandle::StorageTag());
+}
+
 }
 
 namespace vtkm {
@@ -216,14 +225,27 @@ public:
     for (vtkm::IdComponent i = 0; i < input.GetNumberOfFields(); i++)
     {
       vtkm::cont::Field field = input.GetField(PyFRData::FieldName(i));
-      PyFRData::CatalystMappedDataArrayHandle inputHandle =
-        make_CatalystHandle(field);
-
       vtkm::cont::ArrayHandle<FPType> outputHandle;
+
+      //velocity_magnitude is a special case
+      if(PyFRData::FieldName(i) == "velocity_magnitude")
+      {
+      PyFRData::ScalarDataArrayHandle inputHandle =
+        make_ScalarHandle(field);
       // we want to use the mergedLookup as a permutation to the copy
       Algorithms::Copy(
         vtkm::cont::make_ArrayHandlePermutation(mergedLookup, inputHandle),
         outputHandle);
+      }
+      else
+      {
+      PyFRData::CatalystMappedDataArrayHandle inputHandle =
+        make_CatalystHandle(field);
+      // we want to use the mergedLookup as a permutation to the copy
+      Algorithms::Copy(
+        vtkm::cont::make_ArrayHandlePermutation(mergedLookup, inputHandle),
+        outputHandle);
+      }
 
       vtkm::cont::Field outputField(field.GetName(), field.GetOrder(),
         field.GetAssociation(), outputHandle);

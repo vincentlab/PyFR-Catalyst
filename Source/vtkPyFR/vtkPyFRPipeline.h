@@ -41,6 +41,7 @@ public:
   virtual void SetFieldToContourBy(int);
   virtual void SetSlicePlanes(float origin[3], float normal[3],
                               int number, double spacing);
+
   vtkSmartPointer<vtkSMSourceProxy> GetContour() { return this->Contour; }
   vtkSmartPointer<vtkSMSourceProxy> GetSlice()   { return this->Slice;   }
 
