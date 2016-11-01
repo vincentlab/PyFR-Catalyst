@@ -6,8 +6,6 @@
 
 #include "vtkPyFRContourDataAlgorithm.h"
 
-class PyFRParallelSliceFilter;
-
 class VTK_EXPORT vtkPyFRParallelSliceFilter : public vtkPyFRContourDataAlgorithm
 {
 public:
@@ -53,10 +51,6 @@ protected:
   bool ColorPaletteNeedsSyncing;
   int ColorPalette;
   double ColorRange[2];
-
-  unsigned long LastExecuteTime;
-
-  PyFRParallelSliceFilter* Filter;
 
 private:
   static int PyFRDataTypesRegistered;

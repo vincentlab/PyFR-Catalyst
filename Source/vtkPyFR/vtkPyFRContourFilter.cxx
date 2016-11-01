@@ -101,7 +101,6 @@ int vtkPyFRContourFilter::RequestData(
                                  output->GetData());
 
   std::pair<float,float> crange = filter.ColorRange();
-  std::cout << "Coloring contour with field: " << this->MappedField << std::endl;
   std::cout << "Contour color range is: " << ColorRange[0] << " to " << ColorRange[1] << std::endl;
   std::cout << "Input contour color field range:" << crange.first << " to " << crange.second << std::endl;
 

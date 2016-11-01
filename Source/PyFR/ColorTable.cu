@@ -39,6 +39,7 @@ RuntimeColorTable::RuntimeColorTable(int pipeline, FPType cmin, FPType cmax,
   std::cout << "RuntimeColorTable->Min: " << this->Min << std::endl;
   std::cout << "RuntimeColorTable->Max: " << this->Max << std::endl;
   std::cout << "RuntimeColorTable->NumberOfColors: " << this->NumberOfColors << std::endl;
+  std::cout << "RuntimeColorTable->WhichPipeline: " << this->WhichPipeline << std::endl;
   for(std::size_t i=0; i < pivots.size(); ++i)
   {
     std::cout <<  "RuntimeColorTable pivots["<<i<<"] = " << unnormalized_pivots[i] << std::endl;
