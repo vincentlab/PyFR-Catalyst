@@ -653,18 +653,15 @@ void vtkPyFRPipeline::SetFieldToContourBy(int field)
 void vtkPyFRPipeline::SetSlicePlanes(float origin[3], float normal[3],
                                      int number, double spacing)
 {
-  //if(this->WhichPipeline == 2)
-  //{
-  //  for(int i=0; i < 3; ++i)
-  //    {
-  //    vtkSMPropertyHelper(this->Slice,"Origin").Set(i, origin[i]);
-  //    vtkSMPropertyHelper(this->Slice,"Normal").Set(i, normal[i]);
-  //    }
-  //  vtkSMPropertyHelper(this->Slice,"NumberOfPlanes").Set(number);
-  //  vtkSMPropertyHelper(this->Slice,"Spacing").Set(spacing);
-  //  this->Slice->UpdatePropertyInformation();
-  //  this->Slice->UpdateVTKObjects();
-  //}
+    for(int i=0; i < 3; ++i)
+      {
+      vtkSMPropertyHelper(this->Slice,"Origin").Set(i, origin[i]);
+      vtkSMPropertyHelper(this->Slice,"Normal").Set(i, normal[i]);
+      }
+    vtkSMPropertyHelper(this->Slice,"NumberOfPlanes").Set(number);
+    vtkSMPropertyHelper(this->Slice,"Spacing").Set(spacing);
+    this->Slice->UpdatePropertyInformation();
+    this->Slice->UpdateVTKObjects();
 }
 
 //----------------------------------------------------------------------------
@@ -738,14 +735,8 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     this->InsituLink->InsituUpdate(dataDescription->GetTime(),
                                    dataDescription->GetTimeStep());
 
-    //if(this->WhichPipeline <= 1)
-      {
       vtkUpdateFilter(this->Contour, dataDescription->GetTime());
-      }
-    //else if(this->WhichPipeline == 2)
-    //  {
-    //  vtkUpdateFilter(this->Slice, dataDescription->GetTime());
-    //  }
+      vtkUpdateFilter(this->Slice, dataDescription->GetTime());
 
     if(this->PyData(dataDescription)->PrintMetadata()) {
         double* bds = this->ActiveMapper1->GetBounds();

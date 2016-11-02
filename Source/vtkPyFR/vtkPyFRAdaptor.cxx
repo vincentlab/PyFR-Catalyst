@@ -135,7 +135,7 @@ CatalystFilenamePrefix(void* p, const char* pfix) {
 
 //----------------------------------------------------------------------------
 void CatalystSetColorTable(void*, const uint8_t* rgba, const float* loc,
-                           size_t n, int pipeline) {
+                           size_t n, int pipelinen) {
   if(Processor == NULL)
     {
     fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
@@ -143,11 +143,11 @@ void CatalystSetColorTable(void*, const uint8_t* rgba, const float* loc,
     }
   vtkPyFRPipeline* pipeline =
     vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
-  pipeline->SetColorTable(rgba, loc, n, pipeline);
+  pipeline->SetColorTable(rgba, loc, n, pipelinen);
 }
 
 //----------------------------------------------------------------------------
-void CatalystSetColorRange(void*, double low, double high, int pipeline)
+void CatalystSetColorRange(void*, double low, double high, int pipelinen)
 {
   if(Processor == NULL)
     {
@@ -156,7 +156,7 @@ void CatalystSetColorRange(void*, double low, double high, int pipeline)
     }
   vtkPyFRPipeline* pipeline =
     vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
-  pipeline->SetColorRange(low, high, pipeline);
+  pipeline->SetColorRange(low, high, pipelinen);
 }
 
 //----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ void CatalystSetSlicePlanes(float origin[3], float normal[3],
 }
 
 //----------------------------------------------------------------------------
-void CatalystSetFieldToColorBy(int field, pipeline)
+void CatalystSetFieldToColorBy(int field, int pipelinen)
 {
   if(Processor == NULL)
     {
@@ -196,7 +196,7 @@ void CatalystSetFieldToColorBy(int field, pipeline)
     }
   vtkPyFRPipeline* pipeline =
     vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
-  pipeline->SetFieldToColorBy(field, pipeline);
+  pipeline->SetFieldToColorBy(field, pipelinen);
 }
 
 //----------------------------------------------------------------------------
