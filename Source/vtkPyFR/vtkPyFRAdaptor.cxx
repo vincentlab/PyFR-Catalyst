@@ -208,7 +208,9 @@ void CatalystFinalize(void* p)
 
   root(printf("[catalyst] finalizing %p at %s:%d\n", p, __FILE__, __LINE__));
 
+  if(pipeline->GetContour())
   { //release contour gpu memory
+  root(printf("[catalyst] finalizing %p at %s:%d\n", p, __FILE__, __LINE__));
   vtkObjectBase* clientSideContourBase = pipeline->GetContour()->GetClientSideObject();
   vtkPyFRContourFilter* realContour =
     vtkPyFRContourFilter::SafeDownCast(clientSideContourBase);
@@ -216,7 +218,9 @@ void CatalystFinalize(void* p)
   cData->ReleaseResources();
   }
 
+  if(pipeline->GetSlice())
   { //release slice gpu memory
+  root(printf("[catalyst] finalizing %p at %s:%d\n", p, __FILE__, __LINE__));
   vtkObjectBase* clientSideSliceBase = pipeline->GetSlice()->GetClientSideObject();
   vtkPyFRParallelSliceFilter* realSlice =
     vtkPyFRParallelSliceFilter::SafeDownCast(clientSideSliceBase);
