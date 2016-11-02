@@ -69,7 +69,7 @@ private:
   vtkSmartPointer<vtkSMSourceProxy> Contour;
   vtkSmartPointer<vtkSMSourceProxy> Slice;
 
-  //vtkSmartPointer<vtkPyFRMapper> ActiveMapper1, ActiveMapper2;
+  vtkSmartPointer<vtkPyFRMapper> ActiveMapper1, ActiveMapper2;
 
   vtkSmartPointer<vtkTextActor> Timestamp;
 
