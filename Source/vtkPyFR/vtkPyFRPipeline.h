@@ -26,7 +26,7 @@ public:
   //pipelineMode 1=contour
   //pipelineMode 2=slice
   virtual void Initialize(const char* hostName, int port, char* fileName,
-                          int pipeline, vtkCPDataDescription* dataDescription);
+                          vtkCPDataDescription* dataDescription);
 
   virtual int RequestDataDescription(vtkCPDataDescription* dataDescription);
 
@@ -34,9 +34,9 @@ public:
   virtual void SetSpecularLighting(float coefficient, float power);
   virtual int CoProcess(vtkCPDataDescription* dataDescription);
 
-  virtual void SetColorTable(const uint8_t* rgba, const float* loc, size_t n);
-  virtual void SetColorRange(FPType, FPType);
-  virtual void SetFieldToColorBy(int);
+  virtual void SetColorTable(const uint8_t* rgba, const float* loc, size_t n, int pipeline);
+  virtual void SetColorRange(FPType, FPType, int pipeline);
+  virtual void SetFieldToColorBy(int, int);
 
   virtual void SetFieldToContourBy(int);
   virtual void SetSlicePlanes(float origin[3], float normal[3],
@@ -64,13 +64,12 @@ private:
   vtkLiveInsituLink* InsituLink;
 
   std::string FileName;
-  int WhichPipeline;
 
   vtkSmartPointer<vtkSMSourceProxy> Clip;
   vtkSmartPointer<vtkSMSourceProxy> Contour;
   vtkSmartPointer<vtkSMSourceProxy> Slice;
 
-  vtkSmartPointer<vtkPyFRMapper> ActiveMapper;
+  //vtkSmartPointer<vtkPyFRMapper> ActiveMapper1, ActiveMapper2;
 
   vtkSmartPointer<vtkTextActor> Timestamp;
 

@@ -8,7 +8,7 @@ extern "C"
 
   //pipeline 1=contour
   //pipeline 2=slice
-  void* CatalystInitialize(char* hostName, int port, char* outputfile, int pipeline, void* p);
+  void* CatalystInitialize(char* hostName, int port, char* outputfile, void* p);
 
   void CatalystFinalize(void* p);
 
@@ -28,8 +28,8 @@ extern "C"
 
   void CatalystFilenamePrefix(void* p, const char* pfix);
   void CatalystSetColorTable(void*, const uint8_t* rgba, const float* loc,
-                             size_t n);
-  void CatalystSetColorRange(void*, double low, double high);
+                             size_t n, int pipeline);
+  void CatalystSetColorRange(void*, double low, double high, int pipeline);
 
   //Fields:
   //0 = "density";
@@ -51,7 +51,7 @@ extern "C"
 
   //Depending on what mode we initialized catalyst in, this will change
   //field to color the contour or slice by
-  void CatalystSetFieldToColorBy(int field);
+  void CatalystSetFieldToColorBy(int field, int pipeline);
 
 
 #ifdef __cplusplus

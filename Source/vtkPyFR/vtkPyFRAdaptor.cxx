@@ -40,7 +40,7 @@ namespace
 
 //----------------------------------------------------------------------------
 void* CatalystInitialize(char* hostName, int pyport, char* outputfile,
-                         int pipelineMode, void* p)
+                         void* p)
 {
   vtkPyFRData* data = vtkPyFRData::New();
   data->GetData()->Init(p);
@@ -76,7 +76,7 @@ void* CatalystInitialize(char* hostName, int pyport, char* outputfile,
   dataDescription->GetInputDescriptionByName("input")->SetGrid(data);
 
   vtkNew<vtkPyFRPipeline> pipeline;
-  pipeline->Initialize(host, port, outputfile, pipelineMode, dataDescription.GetPointer());
+  pipeline->Initialize(host, port, outputfile, dataDescription.GetPointer());
   Processor->AddPipeline(pipeline.GetPointer());
 
   return data;
@@ -135,7 +135,7 @@ CatalystFilenamePrefix(void* p, const char* pfix) {
 
 //----------------------------------------------------------------------------
 void CatalystSetColorTable(void*, const uint8_t* rgba, const float* loc,
-                           size_t n) {
+                           size_t n, int pipeline) {
   if(Processor == NULL)
     {
     fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
@@ -143,11 +143,11 @@ void CatalystSetColorTable(void*, const uint8_t* rgba, const float* loc,
     }
   vtkPyFRPipeline* pipeline =
     vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
-  pipeline->SetColorTable(rgba, loc, n);
+  pipeline->SetColorTable(rgba, loc, n, pipeline);
 }
 
 //----------------------------------------------------------------------------
-void CatalystSetColorRange(void*, double low, double high)
+void CatalystSetColorRange(void*, double low, double high, int pipeline)
 {
   if(Processor == NULL)
     {
@@ -156,7 +156,7 @@ void CatalystSetColorRange(void*, double low, double high)
     }
   vtkPyFRPipeline* pipeline =
     vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
-  pipeline->SetColorRange(low, high);
+  pipeline->SetColorRange(low, high, pipeline);
 }
 
 //----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ void CatalystSetSlicePlanes(float origin[3], float normal[3],
 }
 
 //----------------------------------------------------------------------------
-void CatalystSetFieldToColorBy(int field)
+void CatalystSetFieldToColorBy(int field, pipeline)
 {
   if(Processor == NULL)
     {
@@ -196,7 +196,7 @@ void CatalystSetFieldToColorBy(int field)
     }
   vtkPyFRPipeline* pipeline =
     vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
-  pipeline->SetFieldToColorBy(field);
+  pipeline->SetFieldToColorBy(field, pipeline);
 }
 
 //----------------------------------------------------------------------------
