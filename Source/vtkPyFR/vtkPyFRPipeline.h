@@ -23,6 +23,8 @@ public:
   vtkTypeMacro(vtkPyFRPipeline,vtkCPPipeline)
   virtual void PrintSelf(ostream& os, vtkIndent indent);
 
+  //pipelineMode 1=contour
+  //pipelineMode 2=slice
   virtual void Initialize(const char* hostName, int port, char* fileName,
                           vtkCPDataDescription* dataDescription);
 
@@ -32,11 +34,13 @@ public:
   virtual void SetSpecularLighting(float coefficient, float power);
   virtual int CoProcess(vtkCPDataDescription* dataDescription);
 
-  virtual void SetColorTable(const uint8_t* rgba, const float* loc, size_t n);
-  virtual void SetColorRange(FPType, FPType);
+  virtual void SetColorTable(const uint8_t* rgba, const float* loc, size_t n, int pipeline);
+  virtual void SetColorRange(FPType, FPType, int pipeline);
+  virtual void SetFieldToColorBy(int, int);
 
   virtual void SetFieldToContourBy(int);
-  virtual void SetFieldToColorBy(int);
+  virtual void SetSlicePlanes(float origin[3], float normal[3],
+                              int number, double spacing);
 
   vtkSmartPointer<vtkSMSourceProxy> GetContour() { return this->Contour; }
   vtkSmartPointer<vtkSMSourceProxy> GetSlice()   { return this->Slice;   }
@@ -46,6 +50,12 @@ protected:
   virtual ~vtkPyFRPipeline();
 
   const PyFRData* PyData(vtkCPDataDescription*) const;
+
+  void InitPipeline1(vtkSmartPointer<vtkSMSourceProxy> input,
+                     vtkCPDataDescription* dataDescription);
+  void InitPipeline2(vtkSmartPointer<vtkSMSourceProxy> input,
+                     vtkCPDataDescription* dataDescription);
+  void DumpToFile(vtkCPDataDescription* dataDescription);
 
 private:
   vtkPyFRPipeline(const vtkPyFRPipeline&); // Not implemented
@@ -59,8 +69,7 @@ private:
   vtkSmartPointer<vtkSMSourceProxy> Contour;
   vtkSmartPointer<vtkSMSourceProxy> Slice;
 
-  vtkSmartPointer<vtkPyFRMapper> ContourMapper;
-  vtkSmartPointer<vtkPyFRMapper> SliceMapper;
+  vtkSmartPointer<vtkPyFRMapper> ActiveMapper1, ActiveMapper2;
 
   vtkSmartPointer<vtkTextActor> Timestamp;
 
