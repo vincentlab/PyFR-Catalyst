@@ -42,6 +42,9 @@ public:
   virtual void SetSlicePlanes(float origin[3], float normal[3],
                               int number, double spacing);
 
+  virtual void SetClipPlanes(float origin1[3], float normal1[3],
+                             float origin2[3], float normal2[3]);
+
   vtkSmartPointer<vtkSMSourceProxy> GetContour() { return this->Contour; }
   vtkSmartPointer<vtkSMSourceProxy> GetSlice()   { return this->Slice;   }
 
@@ -65,7 +68,8 @@ private:
 
   std::string FileName;
 
-  vtkSmartPointer<vtkSMSourceProxy> Clip;
+  vtkSmartPointer<vtkSMSourceProxy> Clip1;
+  vtkSmartPointer<vtkSMSourceProxy> Clip2;
   vtkSmartPointer<vtkSMSourceProxy> Contour;
   vtkSmartPointer<vtkSMSourceProxy> Slice;
 

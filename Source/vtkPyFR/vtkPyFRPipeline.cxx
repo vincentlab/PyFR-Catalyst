@@ -396,18 +396,27 @@ void vtkPyFRPipeline::InitPipeline1(vtkSmartPointer<vtkSMSourceProxy> input,
     vtkPyFRData::SafeDownCast(dataDescription->
                               GetInputDescriptionByName("input")->GetGrid());
 
-#ifdef USE_CLIP
-  // Add the clip filter
-  this->Clip.TakeReference(
+  // Add the first clip filter
+  this->Clip1.TakeReference(
     vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
                                    NewProxy("filters",
                                             "PyFRCrinkleClipFilter")));
-  controller->PreInitializeProxy(this->Clip);
-  vtkSMPropertyHelper(this->Clip, "Input").Set(input, 0);
-  this->Clip->UpdateVTKObjects();
-  this->controller->PostInitializeProxy(this->Clip);
-  this->controller->RegisterPipelineProxy(this->Clip,"Clip");
-#endif
+  controller->PreInitializeProxy(this->Clip1);
+  vtkSMPropertyHelper(this->Clip1, "Input").Set(input, 0);
+  this->Clip1->UpdateVTKObjects();
+  this->controller->PostInitializeProxy(this->Clip1);
+  this->controller->RegisterPipelineProxy(this->Clip1,"Clip");
+
+  // Add the second clip filter
+  this->Clip2.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
+                                   NewProxy("filters",
+                                            "PyFRCrinkleClipFilter")));
+  controller->PreInitializeProxy(this->Clip2);
+  vtkSMPropertyHelper(this->Clip2, "Input").Set(this->Clip1, 0);
+  this->Clip2->UpdateVTKObjects();
+  this->controller->PostInitializeProxy(this->Clip2);
+  this->controller->RegisterPipelineProxy(this->Clip2,"Clip");
 
   // Add the contour filter
   this->Contour.TakeReference(
@@ -418,12 +427,8 @@ void vtkPyFRPipeline::InitPipeline1(vtkSmartPointer<vtkSMSourceProxy> input,
     vtkSMInputProperty::SafeDownCast(this->Contour->GetProperty("Input"));
 
   this->controller->PreInitializeProxy(this->Contour);
-#ifdef USE_CLIP
-  vtkSMPropertyHelper(this->Contour, "Input").Set(this->Clip, 0);
-#else
-  // ignore the clip filter, use input directly.
-  vtkSMPropertyHelper(this->Contour, "Input").Set(input, 0);
-#endif
+
+  vtkSMPropertyHelper(this->Contour, "Input").Set(this->Clip2, 0);
   vtkSMPropertyHelper(this->Contour,"ContourField").Set(0);
   vtkSMPropertyHelper(this->Contour,"ColorField").Set(8);
 
@@ -662,6 +667,23 @@ void vtkPyFRPipeline::SetSlicePlanes(float origin[3], float normal[3],
     vtkSMPropertyHelper(this->Slice,"Spacing").Set(spacing);
     this->Slice->UpdatePropertyInformation();
     this->Slice->UpdateVTKObjects();
+}
+
+//----------------------------------------------------------------------------
+void vtkPyFRPipeline::SetClipPlanes(float origin1[3], float normal1[3],
+                                    float origin2[3], float normal2[3])
+{
+  for(int i=0; i < 3; ++i)
+    {
+    vtkSMPropertyHelper(this->Clip1,"Origin").Set(i, origin1[i]);
+    vtkSMPropertyHelper(this->Clip1,"Normal").Set(i, normal1[i]);
+    vtkSMPropertyHelper(this->Clip2,"Origin").Set(i, origin2[i]);
+    vtkSMPropertyHelper(this->Clip2,"Normal").Set(i, normal2[i]);
+    }
+    this->Clip1->UpdatePropertyInformation();
+    this->Clip1->UpdateVTKObjects();
+    this->Clip2->UpdatePropertyInformation();
+    this->Clip2->UpdateVTKObjects();
 }
 
 //----------------------------------------------------------------------------

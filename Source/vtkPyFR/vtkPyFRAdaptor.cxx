@@ -187,6 +187,20 @@ void CatalystSetSlicePlanes(float origin[3], float normal[3],
 }
 
 //----------------------------------------------------------------------------
+void CatalystSetClipPlanes(float origin1[3], float normal1[3],
+                           float origin2[3], float normal2[3])
+{
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  pipeline->SetClipPlanes(origin1,normal1,origin2,normal2);
+}
+
+//----------------------------------------------------------------------------
 void CatalystSetFieldToColorBy(int field, int pipelinen)
 {
   if(Processor == NULL)

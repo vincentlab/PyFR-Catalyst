@@ -43,10 +43,13 @@ public:
   }
 };
 
+typedef vtkm::worklet::CrinkleClipTraits<typename PyFRData::CellSet>::CellSet ClipCellSet;
+
 struct ContourFilterCellSets
   : vtkm::ListTagBase<
       PyFRData::CellSet,
-      vtkm::worklet::CrinkleClipTraits<typename PyFRData::CellSet>::CellSet
+      ClipCellSet,
+      vtkm::worklet::CrinkleClipTraits<ClipCellSet>::CellSet
     > {};
 
 //----------------------------------------------------------------------------

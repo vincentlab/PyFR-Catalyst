@@ -49,6 +49,10 @@ extern "C"
   void CatalystSetSlicePlanes(float origin[3], float normal[3],
                               int number, double spacing);
 
+  //Specify the location of the two clip planes for the contour pipeline
+  void CatalystSetClipPlanes(float origin1[3], float normal1[3],
+                             float origin2[3], float normal2[3]);
+
   //Depending on what mode we initialized catalyst in, this will change
   //field to color the contour or slice by
   void CatalystSetFieldToColorBy(int field, int pipeline);
