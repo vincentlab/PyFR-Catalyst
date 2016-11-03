@@ -38,7 +38,8 @@ void PyFRCrinkleClipFilter::operator ()(PyFRData* inputData,
   typedef ::vtkm::cont::DeviceAdapterTagCuda CudaTag;
   typedef vtkm::worklet::CrinkleClip<CudaTag> CrinkleClip;
   typedef PyFRData::Vec3ArrayHandle CoordinateArrayHandle;
-  typedef vtkm::ListTagBase<PyFRData::CellSet> CellSetTag;
+  typedef vtkm::ListTagBase<PyFRData::CellSet,
+                             vtkm::worklet::CrinkleClipTraits<typename PyFRData::CellSet>::CellSet > CellSetTag;
   typedef vtkm::Plane ImplicitFunction;
 
   ImplicitFunction func(vtkm::Vec<FPType,3>(this->Origin[0],

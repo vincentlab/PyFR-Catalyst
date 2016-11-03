@@ -70,10 +70,11 @@
           <Entry value="2" text="Velocity_u"/>
           <Entry value="3" text="Velocity_v"/>
           <Entry value="4" text="Velocity_w"/>
-          <Entry value="5" text="Density_gradient_magnitude"/>
-          <Entry value="6" text="Pressure_gradient_magnitude"/>
-          <Entry value="7" text="Velocity_gradient_magnitude"/>
-          <Entry value="8" text="Velocity_qcriterion"/>
+          <Entry value="5" text="Velocity_magnitude"/>
+          <Entry value="6" text="Density_gradient_magnitude"/>
+          <Entry value="7" text="Pressure_gradient_magnitude"/>
+          <Entry value="8" text="Velocity_gradient_magnitude"/>
+          <Entry value="9" text="Velocity_qcriterion"/>
         </EnumerationDomain>
         <Documentation>
           This property indicates which field will be used to color
@@ -272,10 +273,11 @@
           <Entry value="2" text="Velocity_u"/>
           <Entry value="3" text="Velocity_v"/>
           <Entry value="4" text="Velocity_w"/>
-          <Entry value="5" text="Density_gradient_magnitude"/>
-          <Entry value="6" text="Pressure_gradient_magnitude"/>
-          <Entry value="7" text="Velocity_gradient_magnitude"/>
-          <Entry value="8" text="Velocity_qcriterion"/>
+          <Entry value="5" text="Velocity_magnitude"/>
+          <Entry value="6" text="Density_gradient_magnitude"/>
+          <Entry value="7" text="Pressure_gradient_magnitude"/>
+          <Entry value="8" text="Velocity_gradient_magnitude"/>
+          <Entry value="9" text="Velocity_qcriterion"/>
         </EnumerationDomain>
         <Documentation>
           This property indicates which field will be used to color

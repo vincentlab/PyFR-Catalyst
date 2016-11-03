@@ -91,6 +91,7 @@ void PyFRParallelSliceFilter::MapFieldOntoSlices(int field,
                                                  PyFRData* input,
                                                  PyFRContourData* output)
 {
+  std::cout << "Coloring slice with field: " << PyFRData::FieldName(field) << std::endl;
   typedef std::vector<PyFRContour::ScalarDataArrayHandle> ScalarDataHandleVec;
 
   const vtkm::cont::DataSet& dataSet = input->GetDataSet();

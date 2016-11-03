@@ -71,6 +71,10 @@ int vtkPyFRCrinkleClipFilter::RequestData(
     PyFRCrinkleClipFilter filter;
     filter.SetPlane(this->Origin[0],this->Origin[1],this->Origin[2],
                     this->Normal[0],this->Normal[1],this->Normal[2]);
+    std::cout << "Set Plane Origin: " << this->Origin[0] << " "
+              << this->Origin[1] << " " << this->Origin[2] << std::endl;
+    std::cout << "Set Plane Normal: " << this->Normal[0] << " "
+              << this->Normal[1] << " " << this->Normal[2] << std::endl;
     filter(input->GetData(),output->GetData());
     output->Modified();
     }

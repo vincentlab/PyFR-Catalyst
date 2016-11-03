@@ -20,7 +20,7 @@ public:
   unsigned GetContourSize(int) const;
   void ComputeContourBounds(int,FPType*) const;
   void ComputeBounds(FPType*) const;
-  void SetColorPalette(int,FPType,FPType);
+  void SetColorPalette(int,FPType,FPType,int);
 
   void SetColorPreset(int);
   void SetColorRange(FPType,FPType);

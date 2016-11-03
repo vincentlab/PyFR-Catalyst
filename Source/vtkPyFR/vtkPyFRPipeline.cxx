@@ -148,7 +148,7 @@ vtkStandardNewMacro(vtkPyFRPipeline);
 //----------------------------------------------------------------------------
 vtkPyFRPipeline::vtkPyFRPipeline()
 {
-  this->WhichPipeline = 1;
+  //this->WhichPipeline = 1;
   this->InsituLink = NULL;
 }
 
@@ -169,10 +169,9 @@ vtkPyFRPipeline::PyData(vtkCPDataDescription* desc) const {
 
 //----------------------------------------------------------------------------
 void vtkPyFRPipeline::Initialize(const char* hostName, int port, char* fileName,
-                                 int pipeline, vtkCPDataDescription* dataDescription)
+                                 vtkCPDataDescription* dataDescription)
 {
   this->FileName = std::string(fileName);
-  this->WhichPipeline = pipeline;
 
   vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
 
@@ -297,29 +296,36 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
   controller->PostInitializeProxy(gradients);
   controller->RegisterPipelineProxy(gradients,"Gradients");
 
-  //Add the components of PipelineMode1
-  this->InitPipeline1(gradients, dataDescription );
-
-  //Add the components of PipelineMode2
-  this->InitPipeline2(gradients, dataDescription);
-
-  // Create a view
-  vtkSmartPointer<vtkSMViewProxy> polydataViewer;
-  polydataViewer.TakeReference(
+  // Create views
+  vtkSmartPointer<vtkSMViewProxy> polydataViewer1;
+  polydataViewer1.TakeReference(
     vtkSMViewProxy::SafeDownCast(sessionProxyManager->
                                  NewProxy("views","RenderView")));
-  this->controller->InitializeProxy(polydataViewer);
-  this->controller->RegisterViewProxy(polydataViewer);
+  this->controller->InitializeProxy(polydataViewer1);
+  this->controller->RegisterViewProxy(polydataViewer1);
 
-  // Show the results.
-  this->ActiveMapper = vtkSmartPointer<vtkPyFRMapper>::New();
-  if(this->WhichPipeline == 1)
+  this->ActiveMapper1 = vtkSmartPointer<vtkPyFRMapper>::New();
+
+  //Add the components of PipelineMode1
     {
-    vtkAddActor(this->ActiveMapper, this->Contour, polydataViewer);
+    this->InitPipeline1(gradients, dataDescription );
+    vtkAddActor(this->ActiveMapper1, this->Contour, polydataViewer1);
     }
-  else if(this->WhichPipeline == 2)
+
+
+  vtkSmartPointer<vtkSMViewProxy> polydataViewer2;
+  polydataViewer2.TakeReference(
+    vtkSMViewProxy::SafeDownCast(sessionProxyManager->
+                                 NewProxy("views","RenderView")));
+  this->controller->InitializeProxy(polydataViewer2);
+  this->controller->RegisterViewProxy(polydataViewer2);
+
+  this->ActiveMapper2 = vtkSmartPointer<vtkPyFRMapper>::New();
+
     {
-    vtkAddActor(this->ActiveMapper, this->Slice, polydataViewer);
+    //Add the components of PipelineMode2
+    this->InitPipeline2(gradients, dataDescription);
+    vtkAddActor(this->ActiveMapper2, this->Slice, polydataViewer2);
     }
 
   if (postFilterWrite)
@@ -348,7 +354,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     // Create a view
     vtkSmartPointer<vtkDataSetMapper> airplaneMapper =
       vtkSmartPointer<vtkDataSetMapper>::New();
-    vtkAddActor(airplaneMapper, airplane, polydataViewer);
+    vtkAddActor(airplaneMapper, airplane, polydataViewer1);
     }
 
   // Create a timestamp
@@ -363,7 +369,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
 
   // Add the actors to the renderer, set the background and size
   {
-  vtkSMRenderViewProxy* rview = vtkSMRenderViewProxy::SafeDownCast(polydataViewer);
+  vtkSMRenderViewProxy* rview = vtkSMRenderViewProxy::SafeDownCast(polydataViewer1);
 
   vtkRenderer* ren = rview->GetRenderer();
   ren->AddActor2D(this->Timestamp);
@@ -391,18 +397,27 @@ void vtkPyFRPipeline::InitPipeline1(vtkSmartPointer<vtkSMSourceProxy> input,
     vtkPyFRData::SafeDownCast(dataDescription->
                               GetInputDescriptionByName("input")->GetGrid());
 
-#ifdef USE_CLIP
-  // Add the clip filter
-  this->Clip.TakeReference(
+  // Add the first clip filter
+  this->Clip1.TakeReference(
     vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
                                    NewProxy("filters",
                                             "PyFRCrinkleClipFilter")));
-  controller->PreInitializeProxy(this->Clip);
-  vtkSMPropertyHelper(this->Clip, "Input").Set(input, 0);
-  this->Clip->UpdateVTKObjects();
-  this->controller->PostInitializeProxy(this->Clip);
-  this->controller->RegisterPipelineProxy(this->Clip,"Clip");
-#endif
+  controller->PreInitializeProxy(this->Clip1);
+  vtkSMPropertyHelper(this->Clip1, "Input").Set(input, 0);
+  this->Clip1->UpdateVTKObjects();
+  this->controller->PostInitializeProxy(this->Clip1);
+  this->controller->RegisterPipelineProxy(this->Clip1,"Clip");
+
+  // Add the second clip filter
+  this->Clip2.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
+                                   NewProxy("filters",
+                                            "PyFRCrinkleClipFilter")));
+  controller->PreInitializeProxy(this->Clip2);
+  vtkSMPropertyHelper(this->Clip2, "Input").Set(this->Clip1, 0);
+  this->Clip2->UpdateVTKObjects();
+  this->controller->PostInitializeProxy(this->Clip2);
+  this->controller->RegisterPipelineProxy(this->Clip2,"Clip");
 
   // Add the contour filter
   this->Contour.TakeReference(
@@ -413,12 +428,8 @@ void vtkPyFRPipeline::InitPipeline1(vtkSmartPointer<vtkSMSourceProxy> input,
     vtkSMInputProperty::SafeDownCast(this->Contour->GetProperty("Input"));
 
   this->controller->PreInitializeProxy(this->Contour);
-#ifdef USE_CLIP
-  vtkSMPropertyHelper(this->Contour, "Input").Set(this->Clip, 0);
-#else
-  // ignore the clip filter, use input directly.
-  vtkSMPropertyHelper(this->Contour, "Input").Set(input, 0);
-#endif
+
+  vtkSMPropertyHelper(this->Contour, "Input").Set(this->Clip2, 0);
   vtkSMPropertyHelper(this->Contour,"ContourField").Set(0);
   vtkSMPropertyHelper(this->Contour,"ColorField").Set(8);
 
@@ -449,7 +460,7 @@ void vtkPyFRPipeline::InitPipeline2(vtkSmartPointer<vtkSMSourceProxy> input,
                                             "PyFRParallelSliceFilter")));
   this->controller->PreInitializeProxy(this->Slice);
   vtkSMPropertyHelper(this->Slice, "Input").Set(input, 0);
-  vtkSMPropertyHelper(this->Slice,"ColorField").Set(0);
+  vtkSMPropertyHelper(this->Slice,"ColorField").Set(8);
   this->Slice->UpdateVTKObjects();
   this->controller->PostInitializeProxy(this->Slice);
   this->controller->RegisterPipelineProxy(this->Slice,"Slice");
@@ -576,37 +587,56 @@ void vtkPyFRPipeline::SetSpecularLighting(float coefficient, float power)
     }
 }
 
-void fillRuntimeVectors(const uint8_t* rgba, const float* loc, size_t n);
+void fillRuntimeVectors(int pipeline, const uint8_t* rgba, const float* loc, size_t n);
 //----------------------------------------------------------------------------
 void vtkPyFRPipeline::SetColorTable(const uint8_t* rgba, const float* loc,
-                                    size_t n)
+                                    size_t n, int pipeline)
 {
-  fillRuntimeVectors(rgba, loc, n);
   // -1 is ColorTable::RUNTIME; we can't include that header.
-  vtkObjectBase* obj = this->Contour->GetClientSideObject();
-  vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
-  filt->SetColorPalette(-1);
+  //std::cout << " vtkPyFRPipeline::SetColorTable p: " << WhichPipeline << std::endl;
+  if(pipeline <= 1)
+  {
+    fillRuntimeVectors(1, rgba, loc, n);
+    vtkObjectBase* obj = this->Contour->GetClientSideObject();
+    vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
+    filt->SetColorPalette(-1);
+  }
+  else if(pipeline == 2)
+  {
+    fillRuntimeVectors(2, rgba, loc, n);
+    vtkObjectBase* obj = this->Slice->GetClientSideObject();
+    vtkPyFRParallelSliceFilter* filt = vtkPyFRParallelSliceFilter::SafeDownCast(obj);
+    filt->SetColorPalette(-1);
+  }
 }
 
 //----------------------------------------------------------------------------
-void vtkPyFRPipeline::SetColorRange(FPType low, FPType high)
+void vtkPyFRPipeline::SetColorRange(FPType low, FPType high, int pipeline)
 {
-  vtkObjectBase* obj = this->Contour->GetClientSideObject();
-  vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
-
-  filt->SetColorRange(low,high);
+  if(pipeline <= 1)
+  {
+    vtkObjectBase* obj = this->Contour->GetClientSideObject();
+    vtkPyFRContourFilter* filt = vtkPyFRContourFilter::SafeDownCast(obj);
+    filt->SetColorRange(low,high);
+  }
+  else if(pipeline == 2)
+  {
+    vtkObjectBase* obj = this->Slice->GetClientSideObject();
+    vtkPyFRParallelSliceFilter* filt = vtkPyFRParallelSliceFilter::SafeDownCast(obj);
+    filt->SetColorRange(low,high);
+  }
 }
 
 //----------------------------------------------------------------------------
-void vtkPyFRPipeline::SetFieldToColorBy(int field)
+void vtkPyFRPipeline::SetFieldToColorBy(int field, int pipeline)
 {
-  if(this->Contour)
+  if(pipeline <= 1)
   {
     vtkSMPropertyHelper(this->Contour,"ColorField").Set(field);
     this->Contour->UpdatePropertyInformation();
     this->Contour->UpdateVTKObjects();
   }
-  if(this->Slice)
+  else if(pipeline == 2)
   {
     vtkSMPropertyHelper(this->Slice,"ColorField").Set(field);
     this->Slice->UpdatePropertyInformation();
@@ -617,7 +647,7 @@ void vtkPyFRPipeline::SetFieldToColorBy(int field)
 //----------------------------------------------------------------------------
 void vtkPyFRPipeline::SetFieldToContourBy(int field)
 {
-  if(this->Contour)
+  //if(this->WhichPipeline <= 1)
   {
     vtkSMPropertyHelper(this->Contour,"ContourField").Set(field);
     this->Contour->UpdatePropertyInformation();
@@ -629,8 +659,6 @@ void vtkPyFRPipeline::SetFieldToContourBy(int field)
 void vtkPyFRPipeline::SetSlicePlanes(float origin[3], float normal[3],
                                      int number, double spacing)
 {
-  if(this->Slice)
-  {
     for(int i=0; i < 3; ++i)
       {
       vtkSMPropertyHelper(this->Slice,"Origin").Set(i, origin[i]);
@@ -640,7 +668,23 @@ void vtkPyFRPipeline::SetSlicePlanes(float origin[3], float normal[3],
     vtkSMPropertyHelper(this->Slice,"Spacing").Set(spacing);
     this->Slice->UpdatePropertyInformation();
     this->Slice->UpdateVTKObjects();
-  }
+}
+
+//----------------------------------------------------------------------------
+void vtkPyFRPipeline::SetClipPlanes(float origin1[3], float normal1[3],
+                                    float origin2[3], float normal2[3])
+{
+  for(int i=0; i < 3; ++i)
+    {
+    vtkSMPropertyHelper(this->Clip1,"Origin").Set(i, origin1[i]);
+    vtkSMPropertyHelper(this->Clip1,"Normal").Set(i, normal1[i]);
+    vtkSMPropertyHelper(this->Clip2,"Origin").Set(i, origin2[i]);
+    vtkSMPropertyHelper(this->Clip2,"Normal").Set(i, normal2[i]);
+    }
+    this->Clip1->UpdatePropertyInformation();
+    this->Clip1->UpdateVTKObjects();
+    this->Clip2->UpdatePropertyInformation();
+    this->Clip2->UpdateVTKObjects();
 }
 
 //----------------------------------------------------------------------------
@@ -714,10 +758,11 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     this->InsituLink->InsituUpdate(dataDescription->GetTime(),
                                    dataDescription->GetTimeStep());
 
-    vtkUpdateFilter(this->Contour, dataDescription->GetTime());
-    vtkUpdateFilter(this->Slice, dataDescription->GetTime());
+      vtkUpdateFilter(this->Contour, dataDescription->GetTime());
+      vtkUpdateFilter(this->Slice, dataDescription->GetTime());
+
     if(this->PyData(dataDescription)->PrintMetadata()) {
-        double* bds = this->ActiveMapper->GetBounds();
+        double* bds = this->ActiveMapper1->GetBounds();
         reduce(&bds[0], 1, vtkCommunicator::MIN_OP);
         reduce(&bds[1], 1, vtkCommunicator::MAX_OP);
         reduce(&bds[2], 1, vtkCommunicator::MIN_OP);
@@ -725,20 +770,23 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
         reduce(&bds[4], 1, vtkCommunicator::MIN_OP);
         reduce(&bds[5], 1, vtkCommunicator::MAX_OP);
         std::ostringstream b;
-        b << "[catalyst] world bounds: [ ";
+        //b << "[catalyst] (" << this->WhichPipeline << ") world bounds: [ ";
         std::copy(bds, bds+6, std::ostream_iterator<double>(b, ", "));
         b << "]\n";
         root(std::cout << b.str());
 
         b.str("");
         b.clear();
-        vtkObjectBase* obj = this->Contour->GetClientSideObject();
-        const vtkPyFRContourFilter* filt =
-            vtkPyFRContourFilter::SafeDownCast(obj);
-        std::pair<float,float> mm = filt->Range();
-        reduce(&mm.first, 1, vtkCommunicator::MIN_OP);
-        reduce(&mm.second, 1, vtkCommunicator::MAX_OP);
-        b << "[catalyst] range: " << mm.first << "--" << mm.second << "\n";
+        //if(this->WhichPipeline <= 1)
+          {
+          vtkObjectBase* obj = this->Contour->GetClientSideObject();
+          const vtkPyFRContourFilter* filt =
+              vtkPyFRContourFilter::SafeDownCast(obj);
+          std::pair<float,float> mm = filt->Range();
+          reduce(&mm.first, 1, vtkCommunicator::MIN_OP);
+          reduce(&mm.second, 1, vtkCommunicator::MAX_OP);
+          b << "[catalyst] range: " << mm.first << "--" << mm.second << "\n";
+          }
         root(std::cout << b.str());
     }
 
@@ -757,31 +805,35 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
       vtkWeakPointer<vtkRenderWindow> rw = viewProxy->GetRenderWindow();
       vtkWeakPointer<vtkRendererCollection> rens = rw->GetRenderers();
       assert(rens);
-      vtkWeakPointer<vtkRenderer> ren = rens->GetFirstRenderer();
-      ren->ResetCamera();
-      ren->ResetCameraClippingRange();
-      vtkWeakPointer<vtkCamera> cam = ren->GetActiveCamera();
-      const float* eye = pyd->eye;
-      if(!std::isnan(eye[0]) && !std::isnan(eye[1]) && !std::isnan(eye[2])) {
-        cam->SetPosition(eye[0], eye[1], eye[2]);
+      if(!i)
+      for(int j=0;j<rens->GetNumberOfItems();j++)
+      {
+          vtkWeakPointer<vtkRenderer> ren = vtkRenderer::SafeDownCast(rens->GetItemAsObject(j));
+          ren->ResetCamera();
+          ren->ResetCameraClippingRange();
+          vtkWeakPointer<vtkCamera> cam = ren->GetActiveCamera();
+          const float* eye = pyd->eye;
+          if(!std::isnan(eye[0]) && !std::isnan(eye[1]) && !std::isnan(eye[2])) {
+            cam->SetPosition(eye[0], eye[1], eye[2]);
+          }
+          const float* ref = pyd->ref;
+          if(!std::isnan(ref[0]) && !std::isnan(ref[1]) && !std::isnan(ref[2])) {
+            cam->SetFocalPoint(ref[0], ref[1], ref[2]);
+          }
+          const float* vup = pyd->vup;
+          if(!std::isnan(vup[0]) && !std::isnan(vup[1]) && !std::isnan(vup[2])) {
+            cam->SetViewUp(vup[0], vup[1], vup[2]);
+          }
+          const float* bg = pyd->bg_color;
+          if(!std::isnan(bg[0]) && !std::isnan(bg[1]) && !std::isnan(!bg[2])) {
+            ren->SetBackground(bg[0], bg[1], bg[2]);
+          }
+          root(
+            if(this->PyData(dataDescription)->PrintMetadata()) {
+              output_camera(cam);
+            }
+          );
       }
-      const float* ref = pyd->ref;
-      if(!std::isnan(ref[0]) && !std::isnan(ref[1]) && !std::isnan(ref[2])) {
-        cam->SetFocalPoint(ref[0], ref[1], ref[2]);
-      }
-      const float* vup = pyd->vup;
-      if(!std::isnan(vup[0]) && !std::isnan(vup[1]) && !std::isnan(vup[2])) {
-        cam->SetViewUp(vup[0], vup[1], vup[2]);
-      }
-      const float* bg = pyd->bg_color;
-      if(!std::isnan(bg[0]) && !std::isnan(bg[1]) && !std::isnan(!bg[2])) {
-        ren->SetBackground(bg[0], bg[1], bg[2]);
-      }
-      root(
-        if(this->PyData(dataDescription)->PrintMetadata()) {
-          output_camera(cam);
-        }
-      );
 
       const int magnification = 1;
       const int quality = 100;
