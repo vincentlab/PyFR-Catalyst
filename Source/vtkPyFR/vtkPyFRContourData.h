@@ -31,7 +31,7 @@ public:
   bool HasData(int i) const;
 
   double* GetColorRange() { return this->ColorRange; }
-  void SetColorPalette(int,double*);
+  void SetColorPalette(int,int,double*);
   void SetColorPreset(int);
   void SetColorRange(FPType, FPType);
 

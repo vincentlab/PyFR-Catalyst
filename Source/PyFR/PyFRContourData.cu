@@ -26,7 +26,7 @@ public:
   ContourDataImpl()
   {
     TablePreset = ColorTable::GRAYSCALE;
-    this->Table = make_ColorTable(TablePreset,0.0,1.0);
+    this->Table = make_ColorTable(1, TablePreset,0.0,1.0);
   }
 
   ColorTable::Preset TablePreset;
@@ -134,9 +134,9 @@ void PyFRContourData::ComputeBounds(FPType* bounds) const
 }
 
 //----------------------------------------------------------------------------
-void PyFRContourData::SetColorPalette(int preset, FPType min, FPType max)
+void PyFRContourData::SetColorPalette(int preset, FPType min, FPType max, int pipeline)
 {
-  this->Impl->Table = make_ColorTable(static_cast<ColorTable::Preset>(preset), min, max);
+  this->Impl->Table = make_ColorTable(pipeline, static_cast<ColorTable::Preset>(preset), min, max);
   this->Impl->TablePreset = static_cast<ColorTable::Preset>(preset);
 
   for (unsigned i=0;i<this->GetNumberOfContours();i++)
@@ -151,7 +151,8 @@ void PyFRContourData::SetColorPreset(int preset)
 {
   this->SetColorPalette(static_cast<ColorTable::Preset>(preset),
                         this->Impl->Table.Min,
-                        this->Impl->Table.Max);
+                        this->Impl->Table.Max,
+                        this->Impl->Table.WhichPipeline);
 }
 
 //----------------------------------------------------------------------------
@@ -159,7 +160,8 @@ void PyFRContourData::SetColorRange(FPType min,FPType max)
 {
   this->SetColorPalette(this->Impl->TablePreset,
                         min,
-                        max);
+                        max,
+                        this->Impl->Table.WhichPipeline);
 }
 
 namespace transfer
