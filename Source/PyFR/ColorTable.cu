@@ -55,9 +55,10 @@ RuntimeColorTable::RuntimeColorTable(int pipeline, FPType cmin, FPType cmax,
 
 void RuntimeColorTable::ReleaseResources()
 {
-  int p = this->WhichPipeline -1;
-  PaletteVec[p].resize(0); PaletteVec[p].shrink_to_fit();
-  PivotsVec[p].resize(0); PivotsVec[p].shrink_to_fit();
+  PaletteVec[0].resize(0); PaletteVec[0].shrink_to_fit();
+  PivotsVec[0].resize(0); PivotsVec[0].shrink_to_fit();
+  PaletteVec[1].resize(0); PaletteVec[1].shrink_to_fit();
+  PivotsVec[1].resize(0); PivotsVec[1].shrink_to_fit();
 }
 
 void fetchRuntimeVectors(int pipeline,
