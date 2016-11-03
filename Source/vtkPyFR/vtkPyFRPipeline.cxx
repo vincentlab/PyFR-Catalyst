@@ -171,6 +171,7 @@ vtkPyFRPipeline::PyData(vtkCPDataDescription* desc) const {
 void vtkPyFRPipeline::Initialize(const char* hostName, int port, char* fileName,
                                  vtkCPDataDescription* dataDescription)
 {
+  this->view_to_coprocess = 0;
   this->FileName = std::string(fileName);
 
   vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
@@ -778,7 +779,7 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
         reduce(&bds[4], 1, vtkCommunicator::MIN_OP);
         reduce(&bds[5], 1, vtkCommunicator::MAX_OP);
         std::ostringstream b;
-        //b << "[catalyst] (" << this->WhichPipeline << ") world bounds: [ ";
+        b << "[catalyst] world bounds: [ ";
         std::copy(bds, bds+6, std::ostream_iterator<double>(b, ", "));
         b << "]\n";
         root(std::cout << b.str());
@@ -801,10 +802,11 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     vtkNew<vtkCollection> views;
     sessionProxyManager->GetProxies("views",views.GetPointer());
     const size_t nviews = views->GetNumberOfItems();
-    for (int i=0; i < nviews; i++)
+    int view = this->view_to_coprocess;
+    //for (int view=0; view < nviews; view++)
       {
       vtkSMViewProxy* viewProxy =
-        vtkSMViewProxy::SafeDownCast(views->GetItemAsObject(i));
+        vtkSMViewProxy::SafeDownCast(views->GetItemAsObject(view));
       vtkSMPropertyHelper(viewProxy,"ViewTime").Set(dataDescription->GetTime());
       viewProxy->UpdateVTKObjects();
       viewProxy->Update();
@@ -813,9 +815,9 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
       vtkWeakPointer<vtkRenderWindow> rw = viewProxy->GetRenderWindow();
       vtkWeakPointer<vtkRendererCollection> rens = rw->GetRenderers();
       assert(rens);
-      if(!i)
       for(int j=0;j<rens->GetNumberOfItems();j++)
       {
+          printf("Renderer: %d\n", j);
           vtkWeakPointer<vtkRenderer> ren = vtkRenderer::SafeDownCast(rens->GetItemAsObject(j));
           ren->ResetCamera();
           ren->ResetCameraClippingRange();
@@ -849,11 +851,14 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
       if(nviews > 1)
         {
         snprintf(fname, 128, "%s%04ld-v%d.png", pyd->fnprefix.c_str(),
-                 (long)dataDescription->GetTimeStep(), i);
+                 (long)dataDescription->GetTimeStep(), view);
         } else {
         snprintf(fname, 128, "%s%04ld.png", pyd->fnprefix.c_str(),
                  (long)dataDescription->GetTimeStep());
         }
+      printf("View: %d\n", view);
+
+      printf("Saving: %s\n", fname);
       this->controller->WriteImage(viewProxy, fname, magnification, quality);
       }
 

@@ -45,6 +45,8 @@ public:
   virtual void SetClipPlanes(float origin1[3], float normal1[3],
                              float origin2[3], float normal2[3]);
 
+  virtual void SetViewToCoProcess(int view){this->view_to_coprocess=view;printf("Setting view to co-process: %d\n",this->view_to_coprocess);}
+
   vtkSmartPointer<vtkSMSourceProxy> GetContour() { return this->Contour; }
   vtkSmartPointer<vtkSMSourceProxy> GetSlice()   { return this->Slice;   }
 
@@ -67,6 +69,7 @@ private:
   vtkLiveInsituLink* InsituLink;
 
   std::string FileName;
+  int view_to_coprocess;
 
   vtkSmartPointer<vtkSMSourceProxy> Clip1;
   vtkSmartPointer<vtkSMSourceProxy> Clip2;
