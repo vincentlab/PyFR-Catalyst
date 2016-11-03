@@ -31,24 +31,23 @@ vtkStandardNewMacro(vtkPyFRParallelSliceFilter);
 
 //----------------------------------------------------------------------------
 vtkPyFRParallelSliceFilter::vtkPyFRParallelSliceFilter() : Spacing(1.),
-                                                           NumberOfPlanes(1),
-                                                           LastExecuteTime(0)
+                                                           NumberOfPlanes(1)
 {
   this->Origin[0] = this->Origin[1] = this->Origin[2] = 0.;
   this->Normal[1] = this->Normal[2] = 0.;
   this->Normal[0] = 1.;
 
+  //needs syncing since default color table is marked as using contour pipeline
   this->ColorPaletteNeedsSyncing = false;
-  this->ColorPalette = 0;
+  this->ColorPalette = 1;
   this->ColorRange[0] = 0.;
   this->ColorRange[1] = 1.;
-  this->Filter = new PyFRParallelSliceFilter();
 }
 
 //----------------------------------------------------------------------------
 vtkPyFRParallelSliceFilter::~vtkPyFRParallelSliceFilter()
 {
-  delete this->Filter;
+
 }
 
 //----------------------------------------------------------------------------
@@ -56,6 +55,7 @@ void vtkPyFRParallelSliceFilter::SetColorPalette(int palette)
 {
   if(palette != this->ColorPalette)
   {
+    std::cout << "vtkPyFRParallelSliceFilter::SetColorPalette: " << palette << std::endl;
     this->Modified();
     this->ColorPaletteNeedsSyncing = true;
     this->ColorPalette = palette;
@@ -90,38 +90,47 @@ int vtkPyFRParallelSliceFilter::RequestData(
   vtkPyFRContourData *output = vtkPyFRContourData::SafeDownCast(
     outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  if (this->GetMTime() > this->LastExecuteTime)
-    {
-    this->LastExecuteTime = this->GetMTime();
-    Filter->SetPlane(this->Origin[0],this->Origin[1],this->Origin[2],
-                     this->Normal[0],this->Normal[1],this->Normal[2]);
-    Filter->SetSpacing(this->Spacing);
-    Filter->SetNumberOfPlanes(this->NumberOfPlanes);
-    Filter->operator()(input->GetData(),output->GetData());
-    }
+  PyFRParallelSliceFilter filter;
+  filter.SetPlane(this->Origin[0],this->Origin[1],this->Origin[2],
+                   this->Normal[0],this->Normal[1],this->Normal[2]);
+  filter.SetSpacing(this->Spacing);
+  filter.SetNumberOfPlanes(this->NumberOfPlanes);
+  filter(input->GetData(),output->GetData());
 
   if(this->ColorPaletteNeedsSyncing)
     {
-    output->SetColorPalette(this->ColorPalette,this->ColorRange);
+    output->SetColorPalette(2, this->ColorPalette,this->ColorRange);
     this->ColorPaletteNeedsSyncing = false;
     }
 
-  Filter->MapFieldOntoSlices(this->MappedField,input->GetData(),
-                             output->GetData());
+  filter.MapFieldOntoSlices(this->MappedField,
+                            input->GetData(),
+                            output->GetData());
   output->Modified();
-
   return 1;
 }
-//----------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------
+void vtkPyFRParallelSliceFilter::SetMappedField(int i)
+{
+  if (this->MappedField != i)
+    {
+    std::cout << "vtkPyFRParallelSliceFilter Setting field to color by : " << i << std::endl;
+    this->MappedField = i;
+    this->Modified();
+    this->ColorPaletteNeedsSyncing = true;
+    }
+}
+
+//----------------------------------------------------------------------------
 int vtkPyFRParallelSliceFilter::FillInputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPyFRData");
   return 1;
 }
-//----------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------
 void vtkPyFRParallelSliceFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
