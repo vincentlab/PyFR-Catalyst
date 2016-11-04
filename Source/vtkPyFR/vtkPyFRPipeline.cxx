@@ -367,23 +367,23 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     }
 
   // Create a timestamp
-  this->Timestamp = vtkSmartPointer<vtkTextActor>::New();
-    {
-    std::ostringstream o;
-    o << dataDescription->GetTime()<<" s";
-    this->Timestamp->SetInput(o.str().c_str());
-    }
-  this->Timestamp->GetTextProperty()->SetBackgroundColor(0.,0.,0.);
-  this->Timestamp->GetTextProperty()->SetBackgroundOpacity(1);
+  //this->Timestamp = vtkSmartPointer<vtkTextActor>::New();
+  //  {
+  //  std::ostringstream o;
+  //  o << dataDescription->GetTime()<<" s";
+  //  this->Timestamp->SetInput(o.str().c_str());
+  //  }
+  //this->Timestamp->GetTextProperty()->SetBackgroundColor(0.,0.,0.);
+  //this->Timestamp->GetTextProperty()->SetBackgroundOpacity(1);
 
   // Add the actors to the renderer, set the background and size
-  {
-  vtkSMRenderViewProxy* rview = vtkSMRenderViewProxy::SafeDownCast(polydataViewer1);
+  //{
+  //vtkSMRenderViewProxy* rview = vtkSMRenderViewProxy::SafeDownCast(polydataViewer1);
 
-  vtkRenderer* ren = rview->GetRenderer();
-  ren->AddActor2D(this->Timestamp);
-  rview->UpdateVTKObjects();
-  }
+  //vtkRenderer* ren = rview->GetRenderer();
+  //ren->AddActor2D(this->Timestamp);
+  //rview->UpdateVTKObjects();
+  //}
 
   // Initialize the "link"
   this->InsituLink->InsituInitialize(vtkSMProxyManager::GetProxyManager()->
@@ -715,11 +715,11 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     vtkPVTrivialProducer::SafeDownCast(clientSideObject);
   realProducer->SetOutput(pyfrData,dataDescription->GetTime());
 
-    {
-    std::ostringstream o;
-    o << dataDescription->GetTime()<<" s";
-    this->Timestamp->SetInput(o.str().c_str());
-    }
+    //{
+    //std::ostringstream o;
+    //o << dataDescription->GetTime()<<" s";
+    //this->Timestamp->SetInput(o.str().c_str());
+    //}
 
   vtkSMSourceProxy* unstructuredGridWriter =
     vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
@@ -767,6 +767,8 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     this->InsituLink->InsituUpdate(dataDescription->GetTime(),
                                    dataDescription->GetTimeStep());
 
+      vtkUpdateFilter(this->Clip1, dataDescription->GetTime());
+      vtkUpdateFilter(this->Clip2, dataDescription->GetTime());
       vtkUpdateFilter(this->Contour, dataDescription->GetTime());
       vtkUpdateFilter(this->Slice, dataDescription->GetTime());
 

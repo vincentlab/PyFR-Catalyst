@@ -78,7 +78,7 @@ private:
 
   vtkSmartPointer<vtkPyFRMapper> ActiveMapper1, ActiveMapper2;
 
-  vtkSmartPointer<vtkTextActor> Timestamp;
+  //vtkSmartPointer<vtkTextActor> Timestamp;
 
   vtkSmartPointer<vtkSMParaViewPipelineControllerWithRendering> controller;
 };

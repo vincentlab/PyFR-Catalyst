@@ -65,7 +65,7 @@ int vtkPyFRCrinkleClipFilter::RequestData(
   vtkPyFRData *output = vtkPyFRData::SafeDownCast(
     outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  if (this->GetMTime() > this->LastExecuteTime)
+  //if (this->GetMTime() > this->LastExecuteTime)
     {
     this->LastExecuteTime = this->GetMTime();
     PyFRCrinkleClipFilter filter;
