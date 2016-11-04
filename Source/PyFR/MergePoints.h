@@ -237,7 +237,7 @@ public:
         vtkm::cont::make_ArrayHandlePermutation(mergedLookup, inputHandle),
         outputHandle);
       }
-      else
+      else if(PyFRData::FieldName(i) != "pressure")
       {
       PyFRData::CatalystMappedDataArrayHandle inputHandle =
         make_CatalystHandle(field);
