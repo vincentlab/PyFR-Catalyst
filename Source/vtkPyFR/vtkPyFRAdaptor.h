@@ -30,6 +30,7 @@ extern "C"
   void CatalystSetColorTable(void*, const uint8_t* rgba, const float* loc,
                              size_t n, int pipeline);
   void CatalystSetColorRange(void*, double low, double high, int pipeline);
+  void CatalystSetViewToCoprocess(void*, int view_to_coprocess);
 
   //Fields:
   //0 = "density";

@@ -136,6 +136,7 @@ void vtkAddActor(vtkSmartPointer<Mapper> mapper,
 
 void vtkUpdateFilter(vtkSMSourceProxy* filter, double time)
 {
+  // std::cout << "filter: " << filter->GetClassName() << " update to time: " << time << std::endl;
   filter->UpdatePipeline(time);
 }
 
@@ -170,6 +171,7 @@ vtkPyFRPipeline::PyData(vtkCPDataDescription* desc) const {
 void vtkPyFRPipeline::Initialize(const char* hostName, int port, char* fileName,
                                  vtkCPDataDescription* dataDescription)
 {
+  this->view_to_coprocess = 0;
   this->FileName = std::string(fileName);
 
   vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
@@ -332,7 +334,7 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     this->DumpToFile(dataDescription);
     }
 
-  const bool plane = false;
+  const bool plane = true;
   if(plane)
     {
     vtkSmartPointer<vtkSMSourceProxy> airplane;
@@ -343,7 +345,15 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     this->controller->PreInitializeProxy(airplane);
       {
       std::ostringstream o;
-      o << STRINGIFY(DATA_DIR) << "/airplane.vtu";
+      const char* ddir = getenv("PYFR_DATA_DIR");
+      if(NULL == ddir)
+        {
+        std::cerr << "Please set the PYFR_DATA_DIR environment variable to "
+                     "the directory containing wall.vtu.\n";
+        ddir = "/lustre/atlas2/ard116/proj-shared/Test/T106D_cascade_3d-1-105.600PCC-001RCPLDG/TR1/wall";
+        std::cerr << "Assuming " << ddir << " for now ...\n";
+        }
+      o << ddir << "/wall.vtu";
       vtkSMPropertyHelper(airplane, "FileName").Set(o.str().c_str());
       }
     airplane->UpdateVTKObjects();
@@ -357,23 +367,23 @@ PV_PLUGIN_IMPORT(pyfr_plugin_fp64)
     }
 
   // Create a timestamp
-  this->Timestamp = vtkSmartPointer<vtkTextActor>::New();
-    {
-    std::ostringstream o;
-    o << dataDescription->GetTime()<<" s";
-    this->Timestamp->SetInput(o.str().c_str());
-    }
-  this->Timestamp->GetTextProperty()->SetBackgroundColor(0.,0.,0.);
-  this->Timestamp->GetTextProperty()->SetBackgroundOpacity(1);
+  //this->Timestamp = vtkSmartPointer<vtkTextActor>::New();
+  //  {
+  //  std::ostringstream o;
+  //  o << dataDescription->GetTime()<<" s";
+  //  this->Timestamp->SetInput(o.str().c_str());
+  //  }
+  //this->Timestamp->GetTextProperty()->SetBackgroundColor(0.,0.,0.);
+  //this->Timestamp->GetTextProperty()->SetBackgroundOpacity(1);
 
   // Add the actors to the renderer, set the background and size
-  {
-  vtkSMRenderViewProxy* rview = vtkSMRenderViewProxy::SafeDownCast(polydataViewer1);
+  //{
+  //vtkSMRenderViewProxy* rview = vtkSMRenderViewProxy::SafeDownCast(polydataViewer1);
 
-  vtkRenderer* ren = rview->GetRenderer();
-  ren->AddActor2D(this->Timestamp);
-  rview->UpdateVTKObjects();
-  }
+  //vtkRenderer* ren = rview->GetRenderer();
+  //ren->AddActor2D(this->Timestamp);
+  //rview->UpdateVTKObjects();
+  //}
 
   // Initialize the "link"
   this->InsituLink->InsituInitialize(vtkSMProxyManager::GetProxyManager()->
@@ -705,11 +715,11 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     vtkPVTrivialProducer::SafeDownCast(clientSideObject);
   realProducer->SetOutput(pyfrData,dataDescription->GetTime());
 
-    {
-    std::ostringstream o;
-    o << dataDescription->GetTime()<<" s";
-    this->Timestamp->SetInput(o.str().c_str());
-    }
+    //{
+    //std::ostringstream o;
+    //o << dataDescription->GetTime()<<" s";
+    //this->Timestamp->SetInput(o.str().c_str());
+    //}
 
   vtkSMSourceProxy* unstructuredGridWriter =
     vtkSMSourceProxy::SafeDownCast(sessionProxyManager->
@@ -757,6 +767,8 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     this->InsituLink->InsituUpdate(dataDescription->GetTime(),
                                    dataDescription->GetTimeStep());
 
+      vtkUpdateFilter(this->Clip1, dataDescription->GetTime());
+      vtkUpdateFilter(this->Clip2, dataDescription->GetTime());
       vtkUpdateFilter(this->Contour, dataDescription->GetTime());
       vtkUpdateFilter(this->Slice, dataDescription->GetTime());
 
@@ -769,7 +781,7 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
         reduce(&bds[4], 1, vtkCommunicator::MIN_OP);
         reduce(&bds[5], 1, vtkCommunicator::MAX_OP);
         std::ostringstream b;
-        //b << "[catalyst] (" << this->WhichPipeline << ") world bounds: [ ";
+        b << "[catalyst] world bounds: [ ";
         std::copy(bds, bds+6, std::ostream_iterator<double>(b, ", "));
         b << "]\n";
         root(std::cout << b.str());
@@ -792,10 +804,11 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     vtkNew<vtkCollection> views;
     sessionProxyManager->GetProxies("views",views.GetPointer());
     const size_t nviews = views->GetNumberOfItems();
-    for (int i=0; i < nviews; i++)
+    int view = this->view_to_coprocess;
+    //for (int view=0; view < nviews; view++)
       {
       vtkSMViewProxy* viewProxy =
-        vtkSMViewProxy::SafeDownCast(views->GetItemAsObject(i));
+        vtkSMViewProxy::SafeDownCast(views->GetItemAsObject(view));
       vtkSMPropertyHelper(viewProxy,"ViewTime").Set(dataDescription->GetTime());
       viewProxy->UpdateVTKObjects();
       viewProxy->Update();
@@ -804,9 +817,9 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
       vtkWeakPointer<vtkRenderWindow> rw = viewProxy->GetRenderWindow();
       vtkWeakPointer<vtkRendererCollection> rens = rw->GetRenderers();
       assert(rens);
-      if(!i)
       for(int j=0;j<rens->GetNumberOfItems();j++)
       {
+          printf("Renderer: %d\n", j);
           vtkWeakPointer<vtkRenderer> ren = vtkRenderer::SafeDownCast(rens->GetItemAsObject(j));
           ren->ResetCamera();
           ren->ResetCameraClippingRange();
@@ -840,11 +853,14 @@ int vtkPyFRPipeline::CoProcess(vtkCPDataDescription* dataDescription)
       if(nviews > 1)
         {
         snprintf(fname, 128, "%s%04ld-v%d.png", pyd->fnprefix.c_str(),
-                 (long)dataDescription->GetTimeStep(), i);
+                 (long)dataDescription->GetTimeStep(), view);
         } else {
         snprintf(fname, 128, "%s%04ld.png", pyd->fnprefix.c_str(),
                  (long)dataDescription->GetTimeStep());
         }
+      printf("View: %d\n", view);
+
+      printf("Saving: %s\n", fname);
       this->controller->WriteImage(viewProxy, fname, magnification, quality);
       }
 

@@ -71,7 +71,6 @@ struct ComputeGradients : public vtkm::worklet::WorkletMapCellToPoint
   ComputeGradients(vtkm::cont::CellSetSingleType<StorageTag>& cellset,
                    PyFRData::Vec3ArrayHandle coords,
                    PyFRData::ScalarDataArrayHandle density,
-                   PyFRData::ScalarDataArrayHandle pressure,
                    PyFRData::ScalarDataArrayHandle velu,
                    PyFRData::ScalarDataArrayHandle velv,
                    PyFRData::ScalarDataArrayHandle velw)
@@ -79,7 +78,6 @@ struct ComputeGradients : public vtkm::worklet::WorkletMapCellToPoint
                                    vtkm::TopologyElementTagCell())),
       Coordinates(coords.PrepareForInput(DeviceTag())),
       Density(density.PrepareForInput(DeviceTag())),
-      Pressure(pressure.PrepareForInput(DeviceTag())),
       VelocityU(velu.PrepareForInput(DeviceTag())),
       VelocityV(velv.PrepareForInput(DeviceTag())),
       VelocityW(velw.PrepareForInput(DeviceTag()))
@@ -88,10 +86,8 @@ struct ComputeGradients : public vtkm::worklet::WorkletMapCellToPoint
 
   typedef void ControlSignature(TopologyIn topology,
                                 FieldOut<Scalar> d_gradient_mag,
-                                FieldOut<Scalar> p_gradient_mag,
-                                FieldOut<Scalar> v_gradient_mag,
                                 FieldOut<Scalar> qcriterion);
-  typedef void ExecutionSignature(FromCount, FromIndices, WorkIndex, _2, _3, _4, _5);
+  typedef void ExecutionSignature(FromCount, FromIndices, WorkIndex, _2, _3);
   typedef _1 InputDomain;
 
   template <typename FromIndexType>
@@ -99,22 +95,17 @@ struct ComputeGradients : public vtkm::worklet::WorkletMapCellToPoint
                                    const FromIndexType& cellIds,
                                    const vtkm::Id& pointId,
                                    FPType& d_gradient_mag,
-                                   FPType& p_gradient_mag,
-                                   FPType& v_gradient_mag,
                                    FPType& qcriterion) const
   {
     // if this point is not used we don't need to compute anything
     if (numCells == 0)
     {
       d_gradient_mag = 0;
-      p_gradient_mag = 0;
-      v_gradient_mag = 0;
       qcriterion = 0;
       return;
     }
 
     vtkm::Vec<FPType, 3> d_gradient(0.0);
-    vtkm::Vec<FPType, 3> p_gradient(0.0);
     vtkm::Vec<FPType, 9> v_gradient(0.0);
 
     for (vtkm::IdComponent i = 0; i < numCells; ++i)
@@ -143,17 +134,6 @@ struct ComputeGradients : public vtkm::worklet::WorkletMapCellToPoint
         d_gradient[0] += temp[0];
         d_gradient[1] += temp[1];
         d_gradient[2] += temp[2];
-      }
-
-      // compute the pressure derivative for this cell
-      {
-        const GradientField pressure = this->GetPressureValues(topo);
-        const vtkm::Vec<FPType, 3> temp = vtkm::exec::CellDerivative(
-            pressure, wcoords, pcoords, vtkm::CellShapeTagHexahedron(), *this);
-
-        p_gradient[0] += temp[0];
-        p_gradient[1] += temp[1];
-        p_gradient[2] += temp[2];
       }
 
       // compute the velocity derivative for this cell
@@ -190,17 +170,14 @@ struct ComputeGradients : public vtkm::worklet::WorkletMapCellToPoint
     //now we need to average out our gradients
     for(std::size_t i=0; i < 3; ++i)
     {
-      d_gradient[i] /= 8.0f;
-      p_gradient[i] /= 8.0f;
-      v_gradient[i*3] /= 8.0f;
-      v_gradient[i*3+1] /= 8.0f;
-      v_gradient[i*3+2] /= 8.0f;
+      d_gradient[i] /= float(numCells);
+      v_gradient[i*3] /= float(numCells);
+      v_gradient[i*3+1] /= float(numCells);
+      v_gradient[i*3+2] /= float(numCells);
     }
 
     // save magnitudes
     d_gradient_mag = vtkm::Magnitude(d_gradient);
-    p_gradient_mag = vtkm::Magnitude(p_gradient);
-    v_gradient_mag = vtkm::Magnitude(v_gradient);
 
     //now we need to compute the Q Criterion and save that out
     {
@@ -268,14 +245,6 @@ struct ComputeGradients : public vtkm::worklet::WorkletMapCellToPoint
   }
 
   VTKM_EXEC_EXPORT
-  GradientField GetPressureValues(const HexTopo& topo) const
-  {
-    GradientField result;
-    this->GetValues(topo,result,this->Pressure);
-    return result;
-  }
-
-  VTKM_EXEC_EXPORT
   GradientField GetVelocityUValues(const HexTopo& topo) const
   {
     GradientField result;
@@ -322,7 +291,6 @@ private:
   TopoObjectType Topo;
   Vec3PortalType Coordinates;
   ScalarPortalType Density;
-  ScalarPortalType Pressure;
   ScalarPortalType VelocityU;
   ScalarPortalType VelocityV;
   ScalarPortalType VelocityW;
@@ -402,26 +370,23 @@ public:
     //We need to compute the gradient of all the data.
     vtkm::cont::CoordinateSystem coordField = input.GetCoordinateSystem();
     vtkm::cont::Field densityField = input.GetField("density");
-    vtkm::cont::Field pressureField = input.GetField("pressure");
     vtkm::cont::Field veluField = input.GetField("velocity_u");
     vtkm::cont::Field velvField = input.GetField("velocity_v");
     vtkm::cont::Field velwField = input.GetField("velocity_w");
 
     PyFRData::Vec3ArrayHandle coords = make_Vec3Handle(coordField);
     PyFRData::ScalarDataArrayHandle density = make_ScalarHandle(densityField);
-    PyFRData::ScalarDataArrayHandle pressure = make_ScalarHandle(pressureField);
     PyFRData::ScalarDataArrayHandle velu = make_ScalarHandle(veluField);
     PyFRData::ScalarDataArrayHandle velv = make_ScalarHandle(velvField);
     PyFRData::ScalarDataArrayHandle velw = make_ScalarHandle(velwField);
 
     ComputeGradients<StorageTag, DeviceTag> worklet(
-        cellSet, coords, density, pressure, velu, velv, velw);
+        cellSet, coords, density, velu, velv, velw);
 
     vtkm::worklet::DispatcherMapTopology<
         ComputeGradients<StorageTag, DeviceTag>, DeviceTag>
         dispatcher(worklet);
     dispatcher.Invoke(input.GetCellSet(), densityGradientMag,
-                      pressureGradientMag, velocityGradientMag,
                       velocityQCriterion);
   }
 };

@@ -248,6 +248,18 @@ void CatalystFinalize(void* p)
     data->Delete();
     }
 }
+void CatalystSetViewToCoprocess(void*, int view_to_coprocess)
+{
+  if(Processor == NULL)
+    {
+    fprintf(stderr, "%s: catalyst not initialized!\n", __FUNCTION__);
+    return;
+    }
+  vtkPyFRPipeline* pipeline =
+    vtkPyFRPipeline::SafeDownCast(Processor->GetPipeline(0));
+  
+  pipeline->SetViewToCoProcess(view_to_coprocess);
+}
 
 //----------------------------------------------------------------------------
 void CatalystCoProcess(double time,unsigned int timeStep, void* p,bool lastTimeStep)
